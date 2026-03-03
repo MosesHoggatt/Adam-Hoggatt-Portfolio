@@ -44,7 +44,7 @@ amplify init
 ```
 
 Answer the prompts:
-- **Enter a name for the project**: `AdamHoggatPortfolio`
+- **Enter a name for the project**: `AdamHoggattPortfolio`
 - **Enter a name for the environment**: `dev`
 - **Choose your default editor**: (choose your editor, e.g., Visual Studio Code)
 - **Choose the type of app**: `javascript`

@@ -160,7 +160,7 @@ const Portfolio = () => {
       </div>
 
       <footer className="footer">
-        <p>&copy; {new Date().getFullYear()} Adam Hoggat Portfolio. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Adam Hoggatt Portfolio. All rights reserved.</p>
       </footer>
     </>
   )

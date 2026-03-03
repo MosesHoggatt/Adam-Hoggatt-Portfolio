@@ -1,4 +1,4 @@
-# Adam Hoggat Portfolio
+# Adam Hoggatt Portfolio
 
 A static React portfolio website with AWS Amplify authentication and S3 storage for managing projects dynamically.
 
