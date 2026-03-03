@@ -1,5 +1,8 @@
 import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom'
+
+// When deployed to GitHub Pages, VITE_BASE_PATH is set and becomes BASE_URL.
+// Use the router basename so client-side routing works under the subpath.
 import { Amplify } from 'aws-amplify'
 import { Authenticator } from '@aws-amplify/ui-react'
 import '@aws-amplify/ui-react/styles.css'
@@ -26,7 +29,8 @@ Amplify.configure(awsExports)
 function App() {
   return (
     <Authenticator.Provider>
-      <Router>
+      {/* use BASE_URL as basename so Router knows the correct root */}
+      <Router basename={import.meta.env.BASE_URL}>
         <div className="app">
           <Routes>
             <Route path="/" element={<Portfolio />} />
