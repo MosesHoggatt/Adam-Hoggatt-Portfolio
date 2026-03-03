@@ -42,6 +42,10 @@ jobs:
       - name: Copy index.html as 404.html for SPA routing
         run: cp dist/index.html dist/404.html
 
+      # Prevent GitHub Pages from running Jekyll on the built output
+      - name: Add .nojekyll
+        run: touch dist/.nojekyll
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
