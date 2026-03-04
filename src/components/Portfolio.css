@@ -22,8 +22,8 @@
 }
 
 .hero-shot {
-  width: 64px;
-  height: 64px;
+  width: 192px;
+  height: 192px;
   object-fit: cover;
   object-position: center top;
   border-radius: 4px;
@@ -220,12 +220,12 @@
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .hero-title { font-size: 1.9rem; }
-  .hero-shot { width: 100px; height: 100px; }
+  .hero-shot { width: 300px; height: 300px; }
 }
 
 @media (max-width: 600px) {
   .hero-inner { gap: 1rem; padding: 1rem; }
-  .hero-shot { width: 72px; height: 72px; }
+  .hero-shot { width: 216px; height: 216px; }
   .hero-title { font-size: 1.4rem; }
   .hero-subtitle { font-size: 0.85rem; }
   .filter-bar { padding: 1rem; gap: 0.4rem; }
