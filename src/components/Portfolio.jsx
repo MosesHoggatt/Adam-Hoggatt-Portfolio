@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
 import { list, getUrl, downloadData } from 'aws-amplify/storage'
+import awsConfig from '../aws-exports'
 import './Portfolio.css'
+
+// Returns true only if Amplify Storage has been configured with real AWS values.
+const isAmplifyConfigured = () => {
+  const bucket = awsConfig?.Storage?.S3?.bucket
+  return bucket && !bucket.startsWith('YOUR_')
+}
 
 const shortName = (str) => str.replace('Call of Duty: ', '')
 
@@ -16,6 +23,12 @@ const Portfolio = () => {
   }, [])
 
   const fetchProjects = async () => {
+    if (!isAmplifyConfigured()) {
+      // AWS backend not yet connected — show empty state without firing any requests.
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       setError(null)
