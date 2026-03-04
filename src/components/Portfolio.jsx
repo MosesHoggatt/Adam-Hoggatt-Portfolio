@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { list, getUrl, downloadData } from 'aws-amplify/storage'
 import awsConfig from '../aws-exports'
+import Lightbox from './Lightbox'
+import heroShot from '../assets/AdamHoggattHeroShot.jpg'
 import './Portfolio.css'
 
 // Returns true only if Amplify Storage has been configured with real AWS values.
@@ -17,6 +19,7 @@ const Portfolio = () => {
   const [activeFilter, setActiveFilter] = useState('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [lightboxProject, setLightboxProject] = useState(null)
 
   useEffect(() => {
     fetchProjects()
@@ -69,6 +72,7 @@ const Portfolio = () => {
               description: data.description || '',
               date: data.date || '',
               categories: Array.isArray(data.categories) ? data.categories : [],
+              images: Array.isArray(data.images) ? data.images : [],
               thumbnailUrl,
             }
           } catch (err) {
@@ -108,16 +112,10 @@ const Portfolio = () => {
     <div className="portfolio">
       {/* ── Hero ── */}
       <header className="hero">
-        <div className="hero-inner">
+        <img src={heroShot} alt="Adam Hoggatt" className="hero-shot" />
+        <div className="hero-overlay">
           <h1 className="hero-title">Level Design</h1>
-          <p className="hero-bio">
-            As Expert Level Designer at Treyarch, my primary responsibility is gameplay design,
-            and I have created many popular maps in the Call of Duty franchise with the help of
-            many talented members of the Treyarch team. Though others have contributed to the
-            design of many of these, and I have contributed to many others, this is a list of
-            the maps I consider to be mostly (or all) my design work. A few of the most notable
-            maps I've designed include Nuketown, Raid, Moscow, Contraband and Skyline.
-          </p>
+          <p className="hero-subtitle">Adam Hoggatt · Expert Level Designer · Treyarch</p>
         </div>
       </header>
 
@@ -146,7 +144,14 @@ const Portfolio = () => {
         )}
 
         {filteredProjects.map(project => (
-          <article key={project.slug} className="project-card">
+          <article
+            key={project.slug}
+            className="project-card"
+            onClick={() => setLightboxProject(project)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => e.key === 'Enter' && setLightboxProject(project)}
+          >
             <div className="card-image">
               {project.thumbnailUrl
                 ? <img src={project.thumbnailUrl} alt={project.title} />
@@ -167,6 +172,10 @@ const Portfolio = () => {
       <footer className="site-footer">
         <p>&copy; {new Date().getFullYear()} Adam Hoggatt. All rights reserved.</p>
       </footer>
+
+      {lightboxProject && (
+        <Lightbox project={lightboxProject} onClose={() => setLightboxProject(null)} />
+      )}
     </div>
   )
 }
