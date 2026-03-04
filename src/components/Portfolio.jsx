@@ -1,9 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { list, getUrl, downloadData } from 'aws-amplify/storage'
 import awsConfig from '../aws-exports'
 import Lightbox from './Lightbox'
 import heroShot from '../assets/AdamHoggattHeroShot.jpg'
 import './Portfolio.css'
+
+// Module-level cache: S3 path → signed URL string.
+// Persists across re-renders and filter changes for the lifetime of the session.
+const urlCache = new Map()
+
+const getCachedUrl = async (path) => {
+  if (urlCache.has(path)) return urlCache.get(path)
+  const { url } = await getUrl({ path })
+  const str = url.toString()
+  urlCache.set(path, str)
+  return str
+}
 
 // Returns true only if Amplify Storage has been configured with real AWS values.
 const isAmplifyConfigured = () => {
@@ -20,6 +32,9 @@ const Portfolio = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lightboxProject, setLightboxProject] = useState(null)
+  // thumbnailUrls: slug → url string, updated async after cards render
+  const [thumbnailUrls, setThumbnailUrls] = useState({})
+  const resolving = useRef(false)
 
   useEffect(() => {
     fetchProjects()
@@ -50,21 +65,12 @@ const Portfolio = () => {
         return
       }
 
-      // 3. Download and parse each manifest
+      // 3. Download and parse each manifest — no URL resolution here
       const loaded = await Promise.all(
         jsonFiles.map(async (file) => {
           try {
             const dl = await downloadData({ path: file.path }).result
             const data = JSON.parse(await dl.body.text())
-
-            // 4. Resolve the thumbnail URL from the first image path in the manifest
-            let thumbnailUrl = null
-            if (data.images && data.images.length > 0) {
-              try {
-                const { url } = await getUrl({ path: data.images[0] })
-                thumbnailUrl = url.toString()
-              } catch { /* image not yet uploaded */ }
-            }
 
             return {
               title: data.title || '',
@@ -73,7 +79,6 @@ const Portfolio = () => {
               date: data.date || '',
               categories: Array.isArray(data.categories) ? data.categories : [],
               images: Array.isArray(data.images) ? data.images : [],
-              thumbnailUrl,
             }
           } catch (err) {
             console.warn('Failed to load project:', file.path, err)
@@ -86,22 +91,38 @@ const Portfolio = () => {
         .filter(Boolean)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
 
-      // 5. Build the category filter list from whatever is in the data
+      // 4. Build category filter list
       const catSet = new Set(valid.flatMap(p => p.categories))
-      // keep Warzone filter at the very end of the list
       let cats = [...catSet]
       const warzone = 'Call of Duty: Warzone'
       if (cats.includes(warzone)) {
         cats = cats.filter(c => c !== warzone).concat(warzone)
       }
       setAllCategories(cats)
+
+      // 5. Render cards immediately — no thumbnails yet
       setProjects(valid)
+      setLoading(false)
+
+      // 6. Resolve thumbnail URLs in the background, one at a time to avoid rate-limits
+      if (!resolving.current) {
+        resolving.current = true
+        for (const project of valid) {
+          if (project.images.length === 0) continue
+          try {
+            const url = await getCachedUrl(project.images[0])
+            setThumbnailUrls(prev => ({ ...prev, [project.slug]: url }))
+          } catch { /* skip */ }
+        }
+        resolving.current = false
+      }
     } catch (err) {
       console.error('Error loading projects from S3:', err)
       setError('Could not load projects. Please try again later.')
     } finally {
       setLoading(false)
     }
+
   }
 
   const filteredProjects = activeFilter === 'All'
@@ -156,8 +177,8 @@ const Portfolio = () => {
             onKeyDown={e => e.key === 'Enter' && setLightboxProject(project)}
           >
             <div className="card-image">
-              {project.thumbnailUrl
-                ? <img src={project.thumbnailUrl} alt={project.title} />
+              {thumbnailUrls[project.slug]
+                ? <img src={thumbnailUrls[project.slug]} alt={project.title} loading="lazy" />
                 : <div className="image-placeholder" />}
             </div>
             <div className="card-body">
