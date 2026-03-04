@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import awsConfig from '../aws-exports'
 import './Lightbox.css'
 
@@ -8,6 +8,7 @@ const s3Url = (path) => `${S3_BASE}/${path}`
 const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextProject, onClose }) => {
   const images = (project?.images || []).map(s3Url)
   const [activeIndex, setActiveIndex] = useState(0)
+  const thumbsRef = useRef(null)
 
   /* Reset index when project changes */
   useEffect(() => { setActiveIndex(0) }, [project])
@@ -18,11 +19,18 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
     return () => { document.body.style.overflow = '' }
   }, [])
 
+  /* Scroll active thumb into view whenever index changes */
+  useEffect(() => {
+    if (!thumbsRef.current) return
+    const active = thumbsRef.current.querySelector('.lb-thumb-active')
+    if (active) active.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+  }, [activeIndex])
+
   /* Keyboard navigation — arrows for images, [ ] for maps */
   const handleKey = useCallback((e) => {
     if (e.key === 'Escape')     onClose()
-    if (e.key === 'ArrowRight') setActiveIndex(i => Math.min(i + 1, images.length - 1))
-    if (e.key === 'ArrowLeft')  setActiveIndex(i => Math.max(i - 1, 0))
+    if (e.key === 'ArrowRight') setActiveIndex(i => (i + 1) % images.length)
+    if (e.key === 'ArrowLeft')  setActiveIndex(i => (i - 1 + images.length) % images.length)
     if (e.key === '[' && projectIndex > 0)                      onPrevProject()
     if (e.key === ']' && projectIndex < totalProjects - 1)      onNextProject()
   }, [onClose, images.length, projectIndex, totalProjects, onPrevProject, onNextProject])
@@ -53,8 +61,7 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
                 {images.length > 1 && (
                   <button
                     className="lb-nav lb-prev"
-                    onClick={() => setActiveIndex(i => Math.max(i - 1, 0))}
-                    disabled={activeIndex === 0}
+                    onClick={() => setActiveIndex(i => (i - 1 + images.length) % images.length)}
                     aria-label="Previous"
                   >‹</button>
                 )}
@@ -71,8 +78,7 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
                 {images.length > 1 && (
                   <button
                     className="lb-nav lb-next"
-                    onClick={() => setActiveIndex(i => Math.min(i + 1, images.length - 1))}
-                    disabled={activeIndex === images.length - 1}
+                    onClick={() => setActiveIndex(i => (i + 1) % images.length)}
                     aria-label="Next"
                   >›</button>
                 )}
@@ -80,7 +86,7 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
 
               {/* Thumbnail strip — below image area */}
               {images.length > 1 && (
-                <div className="lb-thumbs">
+                <div className="lb-thumbs" ref={thumbsRef}>
                   {images.map((url, i) => (
                     <button
                       key={i}

@@ -140,7 +140,6 @@
   justify-content: center;
 }
 
-.lb-nav:disabled { opacity: 0.2; cursor: default; }
 .lb-nav:not(:disabled):hover { background: #f26501; color: #111; border-color: #f26501; }
 
 .lb-prev { left: 0.4rem; }
