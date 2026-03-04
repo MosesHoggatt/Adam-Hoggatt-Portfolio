@@ -15,7 +15,12 @@
 }
 
 .hero-overlay {
-  background: rgba(10, 10, 10, 0.62);
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0)    0%,
+    rgba(0, 0, 0, 0.55) 45%,
+    rgba(0, 0, 0, 0.82) 100%
+  );
 }
 
 .hero-inner {
