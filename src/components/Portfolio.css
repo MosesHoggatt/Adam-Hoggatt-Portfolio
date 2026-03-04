@@ -39,7 +39,6 @@
   object-position: center top;
   border-radius: 4px;
   flex-shrink: 0;
-  border: 2px solid #2a2a2a;
 }
 
 .hero-text {
@@ -69,7 +68,7 @@
 
 .hero-role {
   font-size: 0.78rem;
-  color: #777;
+  color: #8c8c8c;
   letter-spacing: 0.03em;
   margin: 0;
 }
