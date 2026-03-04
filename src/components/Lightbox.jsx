@@ -31,6 +31,12 @@ const Lightbox = ({ project, onClose }) => {
     resolve()
   }, [project])
 
+  /* Lock body scroll while open */
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
   /* Keyboard navigation */
   const handleKey = useCallback((e) => {
     if (e.key === 'Escape')     onClose()
@@ -46,83 +52,84 @@ const Lightbox = ({ project, onClose }) => {
   if (!project) return null
 
   const activeUrl = resolvedUrls[activeIndex] || null
-  const hasMany   = resolvedUrls.length > 1
 
   return (
-    <section className="lb-panel">
-      <div className="lb-main">
+    <div className="lb-backdrop" onClick={onClose}>
+      <div className="lb-panel" onClick={e => e.stopPropagation()}>
 
-        {/* Left: big image + nav */}
-        <div className="lb-image-area">
-          {hasMany && (
-            <button
-              className="lb-nav lb-prev"
-              onClick={() => setActiveIndex(i => Math.max(i - 1, 0))}
-              disabled={activeIndex === 0}
-              aria-label="Previous"
-            >‹</button>
-          )}
+        {/* Close */}
+        <button className="lb-close" onClick={onClose} aria-label="Close">✕</button>
 
-          <div className="lb-image-frame">
-            {loadingUrls && <div className="lb-spinner">Loading…</div>}
-            {!loadingUrls && activeUrl &&
-              <img src={activeUrl} alt={project.title} />}
-            {!loadingUrls && !activeUrl &&
-              <div className="lb-no-image">No image available</div>}
-          </div>
+        {/* Main content */}
+        <div className="lb-main">
 
-          {hasMany && (
-            <button
-              className="lb-nav lb-next"
-              onClick={() => setActiveIndex(i => Math.min(i + 1, resolvedUrls.length - 1))}
-              disabled={activeIndex === resolvedUrls.length - 1}
-              aria-label="Next"
-            >›</button>
-          )}
-        </div>
-
-        {/* Right: info + thumbnails */}
-        <aside className="lb-sidebar">
-          <div className="lb-sidebar-header">
-            <h2 className="lb-title">{project.title}</h2>
-            <button className="lb-close" onClick={onClose} aria-label="Close">✕</button>
-          </div>
-
-          <div className="lb-tags">
-            {(project.categories || []).map(c => (
-              <span key={c} className="tag">{c.replace('Call of Duty: ', '')}</span>
-            ))}
-          </div>
-
-          {project.description && (
-            <p className="lb-desc">{project.description}</p>
-          )}
-
-          {/* Thumbnail strip */}
-          {hasMany && (
-            <div className="lb-thumbs">
-              {resolvedUrls.map((url, i) => (
+          {/* Left: big image + thumbs below */}
+          <div className="lb-image-col">
+            <div className="lb-image-area">
+              {resolvedUrls.length > 1 && (
                 <button
-                  key={i}
-                  className={`lb-thumb${i === activeIndex ? ' lb-thumb-active' : ''}`}
-                  onClick={() => setActiveIndex(i)}
-                >
-                  <img src={url} alt={`View ${i + 1}`} />
-                </button>
+                  className="lb-nav lb-prev"
+                  onClick={() => setActiveIndex(i => Math.max(i - 1, 0))}
+                  disabled={activeIndex === 0}
+                  aria-label="Previous"
+                >‹</button>
+              )}
+
+              <div className="lb-image-frame">
+                {loadingUrls && <div className="lb-spinner">Loading…</div>}
+                {!loadingUrls && activeUrl &&
+                  <img src={activeUrl} alt={project.title} />}
+                {!loadingUrls && !activeUrl &&
+                  <div className="lb-no-image">No image available</div>}
+              </div>
+
+              {resolvedUrls.length > 1 && (
+                <button
+                  className="lb-nav lb-next"
+                  onClick={() => setActiveIndex(i => Math.min(i + 1, resolvedUrls.length - 1))}
+                  disabled={activeIndex === resolvedUrls.length - 1}
+                  aria-label="Next"
+                >›</button>
+              )}
+            </div>
+
+            {/* Thumbnail strip — below main image */}
+            {resolvedUrls.length > 1 && (
+              <div className="lb-thumbs">
+                {resolvedUrls.map((url, i) => (
+                  <button
+                    key={i}
+                    className={`lb-thumb${i === activeIndex ? ' lb-thumb-active' : ''}`}
+                    onClick={() => setActiveIndex(i)}
+                  >
+                    <img src={url} alt={`View ${i + 1}`} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right: info (no thumbs here) */}
+          <aside className="lb-sidebar">
+            <h2 className="lb-title">{project.title}</h2>
+
+            <div className="lb-tags">
+              {(project.categories || []).map(c => (
+                <span key={c} className="tag">{c.replace('Call of Duty: ', '')}</span>
               ))}
             </div>
-          )}
 
-          {hasMany && (
-            <p className="lb-counter">{activeIndex + 1} / {resolvedUrls.length}</p>
-          )}
-        </aside>
+            {project.description && (
+              <p className="lb-desc">{project.description}</p>
+            )}
+
+            {resolvedUrls.length > 0 && (
+              <p className="lb-counter">{activeIndex + 1} / {resolvedUrls.length}</p>
+            )}
+          </aside>
+        </div>
       </div>
-    </section>
-  )
-}
-
-export default Lightbox
+    </div>
   )
 }
 

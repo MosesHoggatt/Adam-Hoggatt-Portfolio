@@ -1,42 +1,70 @@
-/* ── Panel (inline flex child of .portfolio) ──────────────────── */
-.lb-panel {
-  flex: 1 1 0;
-  min-height: 0;
+/* ── Backdrop ─────────────────────────────────────────────────── */
+.lb-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  z-index: 1000;
   display: flex;
-  flex-direction: column;
-  background: #111;
-  border-top: 1px solid #2a2a2a;
-  animation: lb-slide-down 0.18s ease;
-  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  animation: lb-fade-in 0.18s ease;
 }
 
-@keyframes lb-slide-down {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+@keyframes lb-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Panel ────────────────────────────────────────────────────── */
+.lb-panel {
+  position: relative;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  width: min(95vw, 1200px);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: lb-slide-up 0.2s ease;
+}
+
+@keyframes lb-slide-up {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 
 /* ── Close button ─────────────────────────────────────────────── */
 .lb-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.8rem;
   background: none;
   border: none;
-  color: #666;
-  font-size: 1.2rem;
+  color: #aaa;
+  font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
-  flex-shrink: 0;
-  padding: 0.1rem 0.3rem;
-  border-radius: 3px;
-  transition: color 0.15s, background 0.15s;
+  z-index: 10;
+  transition: color 0.15s;
 }
 
-.lb-close:hover { color: #f26501; background: rgba(242, 101, 1, 0.08); }
+.lb-close:hover { color: #f26501; }
 
 /* ── Main layout ──────────────────────────────────────────────── */
 .lb-main {
+  display: flex;
   flex: 1;
   min-height: 0;
+}
+
+/* ── Left column (image + thumbs) ────────────────────────────── */
+.lb-image-col {
+  flex: 1 1 auto;
   display: flex;
-  overflow: hidden;
+  flex-direction: column;
+  min-width: 0;
+  background: #0d0d0d;
 }
 
 /* ── Image area ───────────────────────────────────────────────── */
@@ -44,9 +72,8 @@
   flex: 1 1 auto;
   display: flex;
   align-items: center;
-  background: #0d0d0d;
   position: relative;
-  min-width: 0;
+  min-height: 0;
 }
 
 .lb-image-frame {
@@ -55,12 +82,13 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  padding: 1rem 3.2rem;
+  padding: 1rem 3rem;
+  min-height: 0;
 }
 
 .lb-image-frame img {
   max-width: 100%;
-  max-height: 100%;
+  max-height: 60vh;
   object-fit: contain;
   border-radius: 2px;
   user-select: none;
@@ -95,30 +123,23 @@
 
 /* ── Sidebar ──────────────────────────────────────────────────── */
 .lb-sidebar {
-  width: 300px;
-  flex: 0 0 300px;
+  width: 280px;
+  flex: 0 0 280px;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.2rem;
+  gap: 0.8rem;
+  padding: 1.4rem 1.2rem 1rem;
   border-left: 1px solid #2a2a2a;
   overflow-y: auto;
   background: #1a1a1a;
 }
 
-.lb-sidebar-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
 .lb-title {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #fff;
   margin: 0;
-  line-height: 1.3;
+  padding-right: 1.4rem; /* avoid close btn overlap */
 }
 
 .lb-tags {
@@ -135,13 +156,16 @@
   white-space: pre-wrap;
 }
 
-/* ── Thumbnail strip ──────────────────────────────────────────── */
+/* ── Thumbnail strip — below main image ─────────────────────── */
 .lb-thumbs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.3rem;
-  margin-top: auto;
-  padding-top: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  background: #111;
+  border-top: 1px solid #2a2a2a;
+  max-height: 140px;
+  overflow-y: auto;
 }
 
 .lb-thumb {
@@ -153,6 +177,8 @@
   background: #111;
   transition: border-color 0.15s;
   aspect-ratio: 16 / 9;
+  width: 100px;
+  flex: 0 0 100px;
 }
 
 .lb-thumb img {
@@ -187,8 +213,10 @@
     flex: 0 0 auto;
     border-left: none;
     border-top: 1px solid #2a2a2a;
-    max-height: 38vh;
+    max-height: 35vh;
   }
 
-  .lb-image-frame { padding: 0.5rem 2.6rem; }
+  .lb-image-frame { padding: 0.5rem 2.5rem; }
+  .lb-image-frame img { max-height: 38vh; }
+  .lb-thumb { width: 72px; flex-basis: 72px; }
 }
