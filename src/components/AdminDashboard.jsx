@@ -7,6 +7,7 @@ const AdminDashboard = () => {
     title: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
+    categories: '', // comma-separated, e.g. "Call of Duty: Black Ops 4, Call of Duty: Black Ops 3"
   })
   const [selectedImages, setSelectedImages] = useState([])
   const [imagePreviews, setImagePreviews] = useState([])
@@ -126,11 +127,18 @@ const AdminDashboard = () => {
         imageKeys.push(path)
       }
 
+      // Parse comma-separated categories into an array, trimming whitespace
+      const categories = formData.categories
+        .split(',')
+        .map(c => c.trim())
+        .filter(Boolean)
+
       // Create project metadata
       const projectData = {
         title: formData.title,
         description: formData.description,
         date: formData.date,
+        categories,
         images: imageKeys,
         slug: slug,
         createdAt: new Date().toISOString(),
@@ -153,6 +161,7 @@ const AdminDashboard = () => {
         title: '',
         description: '',
         date: new Date().toISOString().split('T')[0],
+        categories: '',
       })
       setSelectedImages([])
       setImagePreviews([])
@@ -242,6 +251,21 @@ const AdminDashboard = () => {
                 name="date"
                 value={formData.date}
                 onChange={handleInputChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="categories">
+                Game Categories
+                <span className="field-hint"> — comma-separated (e.g. Call of Duty: Black Ops 4, Call of Duty: Black Ops 3)</span>
+              </label>
+              <input
+                type="text"
+                id="categories"
+                name="categories"
+                value={formData.categories}
+                onChange={handleInputChange}
+                placeholder="Call of Duty: Black Ops 4, Call of Duty: Black Ops 3"
               />
             </div>
 

@@ -68,6 +68,12 @@
   color: #555;
 }
 
+.field-hint {
+  font-weight: 400;
+  font-size: 0.82rem;
+  color: #888;
+}
+
 .form-group input,
 .form-group textarea {
   padding: 0.75rem;

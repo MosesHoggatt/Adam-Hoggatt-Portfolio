@@ -1,110 +1,89 @@
 import { useState, useEffect } from 'react'
-import { list, getUrl } from 'aws-amplify/storage'
+import { list, getUrl, downloadData } from 'aws-amplify/storage'
 import './Portfolio.css'
 
-// ─── Static project catalogue ───────────────────────────────────────────────
-// Images are loaded from S3 (keyed by slug). Cards render without images until
-// assets are uploaded via the Admin Dashboard.
-const STATIC_PROJECTS = [
-  // Call of Duty: Black Ops 6
-  { title: 'Warhead',        slug: 'warhead',        categories: ['Call of Duty: Black Ops 6'] },
-  { title: 'Vorkuta',        slug: 'vorkuta',        categories: ['Call of Duty: Black Ops 6'] },
-  { title: 'Skyline',        slug: 'skyline',        categories: ['Call of Duty: Black Ops 6'] },
-  { title: 'Vault',          slug: 'vault',          categories: ['Call of Duty: Black Ops 6'] },
-  // Call of Duty: Black Ops Cold War / Warzone
-  { title: 'Echelon',        slug: 'echelon',        categories: ['Call of Duty: Black Ops Cold War'] },
-  { title: 'Hijacked Gulag', slug: 'hijacked-gulag', categories: ['Call of Duty: Warzone'] },
-  { title: 'Cartel',         slug: 'cartel',         categories: ['Call of Duty: Black Ops Cold War'] },
-  { title: 'Moscow',         slug: 'moscow',         categories: ['Call of Duty: Black Ops Cold War'] },
-  // Call of Duty: Black Ops 4
-  { title: 'Der Schatten',   slug: 'der-schatten',   categories: ['Call of Duty: Black Ops 4'] },
-  { title: 'Remnant',        slug: 'remnant',        categories: ['Call of Duty: Black Ops 4'] },
-  { title: 'Lockup',         slug: 'lockup',         categories: ['Call of Duty: Black Ops 4'] },
-  { title: 'Masquerade',     slug: 'masquerade',     categories: ['Call of Duty: Black Ops 4'] },
-  { title: 'Frequency',      slug: 'frequency',      categories: ['Call of Duty: Black Ops 4'] },
-  { title: 'Contraband',     slug: 'contraband',     categories: ['Call of Duty: Black Ops 4'] },
-  // Call of Duty: Black Ops 3
-  { title: 'Micro',          slug: 'micro',          categories: ['Call of Duty: Black Ops 3'] },
-  { title: 'Citadel',        slug: 'citadel',        categories: ['Call of Duty: Black Ops 3'] },
-  { title: 'Spire',          slug: 'spire',          categories: ['Call of Duty: Black Ops 3'] },
-  { title: 'Berserk',        slug: 'berserk',        categories: ['Call of Duty: Black Ops 3'] },
-  { title: 'Gauntlet',       slug: 'gauntlet',       categories: ['Call of Duty: Black Ops 3'] },
-  { title: 'Metro',          slug: 'metro',          categories: ['Call of Duty: Black Ops 3'] },
-  { title: 'Aquarium',       slug: 'aquarium',       categories: ['Call of Duty: Black Ops 3'] },
-  { title: 'Redwood',        slug: 'redwood',        categories: ['Call of Duty: Black Ops 3'] },
-  // Call of Duty: Black Ops 2
-  { title: 'Frost',          slug: 'frost',          categories: ['Call of Duty: Black Ops 2'] },
-  { title: 'Encore',         slug: 'encore',         categories: ['Call of Duty: Black Ops 2'] },
-  { title: 'Raid',           slug: 'raid',           categories: ['Call of Duty: Black Ops 2', 'Call of Duty: Black Ops 3', 'Call of Duty: Black Ops 4', 'Call of Duty: Black Ops Cold War'] },
-  { title: 'Overflow',       slug: 'overflow',       categories: ['Call of Duty: Black Ops 2'] },
-  { title: 'Meltdown',       slug: 'meltdown',       categories: ['Call of Duty: Black Ops 2'] },
-  // Call of Duty: Black Ops
-  { title: 'Drive In',       slug: 'drive-in',       categories: ['Call of Duty: Black Ops', 'Call of Duty: Black Ops Cold War'] },
-  { title: 'Discovery',      slug: 'discovery',      categories: ['Call of Duty: Black Ops'] },
-  { title: 'Cracked',        slug: 'cracked',        categories: ['Call of Duty: Black Ops'] },
-  { title: 'Nuketown',       slug: 'nuketown',       categories: ['Call of Duty: Black Ops', 'Call of Duty: Black Ops 2', 'Call of Duty: Black Ops 3', 'Call of Duty: Black Ops 4', 'Call of Duty: Black Ops 6'] },
-  { title: 'Radiation',      slug: 'radiation',      categories: ['Call of Duty: Black Ops'] },
-  // Call of Duty: World at War
-  { title: 'Knee Deep',      slug: 'knee-deep',      categories: ['Call of Duty: World at War'] },
-  { title: 'Cliffside/Hazard', slug: 'cliffside',    categories: ['Call of Duty: Black Ops', 'Call of Duty: World at War'] },
-  { title: 'Upheaval',       slug: 'upheaval',       categories: ['Call of Duty: World at War'] },
-]
-
-const ALL_GAMES = [
-  'Call of Duty: Black Ops 6',
-  'Call of Duty: Black Ops Cold War',
-  'Call of Duty: Warzone',
-  'Call of Duty: Black Ops 4',
-  'Call of Duty: Black Ops 3',
-  'Call of Duty: Black Ops 2',
-  'Call of Duty: Black Ops',
-  'Call of Duty: World at War',
-]
-
-const shortName = (game) => game.replace('Call of Duty: ', '')
+const shortName = (str) => str.replace('Call of Duty: ', '')
 
 const Portfolio = () => {
-  const [imageMap, setImageMap] = useState({}) // slug → first image URL
+  const [projects, setProjects] = useState([])   // full project objects from S3
+  const [allCategories, setAllCategories] = useState([]) // derived from loaded data
   const [activeFilter, setActiveFilter] = useState('All')
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetchImages()
+    fetchProjects()
   }, [])
 
-  // Load the first available image for each project slug from S3.
-  // Cards render immediately from static data; images fill in asynchronously.
-  const fetchImages = async () => {
+  const fetchProjects = async () => {
     try {
+      setLoading(true)
+      setError(null)
+
+      // 1. List every file under projects/
       const result = await list({ path: 'projects/' })
-      const imageFiles = result.items.filter(item =>
-        /\.(jpe?g|png|gif|webp)$/i.test(item.path)
+
+      // 2. Only top-level JSON files are project manifests (e.g. projects/raid.json)
+      const jsonFiles = result.items.filter(item =>
+        item.path.match(/^projects\/[^/]+\.json$/)
       )
 
-      const entries = await Promise.all(
-        STATIC_PROJECTS.map(async ({ slug }) => {
-          const match = imageFiles.find(f => f.path.includes(`/${slug}/`))
-          if (!match) return [slug, null]
+      if (jsonFiles.length === 0) {
+        setProjects([])
+        setLoading(false)
+        return
+      }
+
+      // 3. Download and parse each manifest
+      const loaded = await Promise.all(
+        jsonFiles.map(async (file) => {
           try {
-            const { url } = await getUrl({ path: match.path })
-            return [slug, url.toString()]
-          } catch {
-            return [slug, null]
+            const dl = await downloadData({ path: file.path }).result
+            const data = JSON.parse(await dl.body.text())
+
+            // 4. Resolve the thumbnail URL from the first image path in the manifest
+            let thumbnailUrl = null
+            if (data.images && data.images.length > 0) {
+              try {
+                const { url } = await getUrl({ path: data.images[0] })
+                thumbnailUrl = url.toString()
+              } catch { /* image not yet uploaded */ }
+            }
+
+            return {
+              title: data.title || '',
+              slug: data.slug || '',
+              description: data.description || '',
+              date: data.date || '',
+              categories: Array.isArray(data.categories) ? data.categories : [],
+              thumbnailUrl,
+            }
+          } catch (err) {
+            console.warn('Failed to load project:', file.path, err)
+            return null
           }
         })
       )
 
-      setImageMap(Object.fromEntries(entries))
+      const valid = loaded
+        .filter(Boolean)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+
+      // 5. Build the category filter list from whatever is in the data
+      const catSet = new Set(valid.flatMap(p => p.categories))
+      setAllCategories([...catSet])
+      setProjects(valid)
     } catch (err) {
-      console.warn('S3 unavailable; showing cards without images.', err)
+      console.error('Error loading projects from S3:', err)
+      setError('Could not load projects. Please try again later.')
     } finally {
       setLoading(false)
     }
   }
 
   const filteredProjects = activeFilter === 'All'
-    ? STATIC_PROJECTS
-    : STATIC_PROJECTS.filter(p => p.categories.includes(activeFilter))
+    ? projects
+    : projects.filter(p => p.categories.includes(activeFilter))
 
   return (
     <div className="portfolio">
@@ -123,28 +102,34 @@ const Portfolio = () => {
         </div>
       </header>
 
-      {/* ── Filter bar ── */}
-      <div className="filter-bar">
-        {['All', ...ALL_GAMES].map(game => (
-          <button
-            key={game}
-            className={`filter-btn${activeFilter === game ? ' active' : ''}`}
-            onClick={() => setActiveFilter(game)}
-          >
-            {game === 'All' ? 'All' : shortName(game)}
-          </button>
-        ))}
-      </div>
+      {/* ── Filter bar (built dynamically from loaded category data) ── */}
+      {allCategories.length > 0 && (
+        <div className="filter-bar">
+          {['All', ...allCategories].map(cat => (
+            <button
+              key={cat}
+              className={`filter-btn${activeFilter === cat ? ' active' : ''}`}
+              onClick={() => setActiveFilter(cat)}
+            >
+              {cat === 'All' ? 'All' : shortName(cat)}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Grid ── */}
       <main className="projects-grid">
-        {loading && <p className="status-msg">Loading images…</p>}
+        {loading && <p className="status-msg">Loading projects…</p>}
+        {error  && <p className="status-msg error-msg">{error}</p>}
+        {!loading && !error && projects.length === 0 && (
+          <p className="status-msg">No projects yet. Check back soon.</p>
+        )}
 
         {filteredProjects.map(project => (
           <article key={project.slug} className="project-card">
             <div className="card-image">
-              {imageMap[project.slug]
-                ? <img src={imageMap[project.slug]} alt={project.title} />
+              {project.thumbnailUrl
+                ? <img src={project.thumbnailUrl} alt={project.title} />
                 : <div className="image-placeholder" />}
             </div>
             <div className="card-body">
