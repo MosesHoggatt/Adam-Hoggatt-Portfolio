@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { list } from 'aws-amplify/storage'
 import awsConfig from '../aws-exports'
 import Lightbox from './Lightbox'
 import heroShot from '../assets/AdamHoggattHeroShot.jpg'
@@ -10,12 +9,6 @@ const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S
 // Convert an S3 storage path (e.g. "projects/raid/images/raid.jpg")
 // to a public HTTPS URL — no signing, no Cognito needed.
 const s3Url = (path) => `${S3_BASE}/${path}`
-
-// Returns true only if Amplify Storage has been configured with real AWS values.
-const isAmplifyConfigured = () => {
-  const bucket = awsConfig?.Storage?.S3?.bucket
-  return bucket && !bucket.startsWith('YOUR_')
-}
 
 const shortName = (str) => str.replace('Call of Duty: ', '')
 
@@ -32,35 +25,26 @@ const Portfolio = () => {
   }, [])
 
   const fetchProjects = async () => {
-    if (!isAmplifyConfigured()) {
-      // AWS backend not yet connected — show empty state without firing any requests.
-      setLoading(false)
-      return
-    }
-
     try {
       setLoading(true)
       setError(null)
 
-      // 1. List every file under projects/
-      const result = await list({ path: 'projects/' })
+      // 1. Fetch the static index — one public GET, no Cognito/Amplify involved
+      const indexRes = await fetch(s3Url('projects/index.json'))
+      if (!indexRes.ok) throw new Error(`Index fetch failed: ${indexRes.status}`)
+      const jsonPaths = await indexRes.json()
 
-      // 2. Only top-level JSON files are project manifests (e.g. projects/raid.json)
-      const jsonFiles = result.items.filter(item =>
-        item.path.match(/^projects\/[^/]+\.json$/)
-      )
-
-      if (jsonFiles.length === 0) {
+      if (jsonPaths.length === 0) {
         setProjects([])
         setLoading(false)
         return
       }
 
-      // 3. Fetch and parse each manifest directly — no Amplify credential needed
+      // 2. Fetch and parse each manifest — all public GETs in parallel
       const loaded = await Promise.all(
-        jsonFiles.map(async (file) => {
+        jsonPaths.map(async (path) => {
           try {
-            const res = await fetch(s3Url(file.path))
+            const res = await fetch(s3Url(path))
             const data = await res.json()
 
             return {
@@ -72,7 +56,7 @@ const Portfolio = () => {
               images: Array.isArray(data.images) ? data.images : [],
             }
           } catch (err) {
-            console.warn('Failed to load project:', file.path, err)
+            console.warn('Failed to load project:', path, err)
             return null
           }
         })
