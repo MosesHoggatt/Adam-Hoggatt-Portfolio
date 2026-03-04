@@ -11,11 +11,11 @@
     "Adding a giant robot"
   ],
   "images": [
+    "projects/der-schatten/images/der_shat.png",
     "projects/der-schatten/images/DerSchatten_MiniMap_BO4.jpg",
     "projects/der-schatten/images/Op5_DER-SCHATTEN-02.jpg",
     "projects/der-schatten/images/Op5_DER-SCHATTEN-04.jpg",
-    "projects/der-schatten/images/Op5_DER-SCHATTEN-05.jpg",
-    "projects/der-schatten/images/der_shat.png"
+    "projects/der-schatten/images/Op5_DER-SCHATTEN-05.jpg"
   ],
   "createdAt": "2026-03-04T00:13:36.661Z"
 }
