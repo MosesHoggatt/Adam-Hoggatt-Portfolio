@@ -30,7 +30,7 @@ const Portfolio = () => {
       setError(null)
 
       // 1. Fetch the static index — one public GET, no Cognito/Amplify involved
-      const indexRes = await fetch(s3Url('projects/index.json'))
+      const indexRes = await fetch(s3Url('projects/index.json'), { cache: 'no-cache' })
       if (!indexRes.ok) throw new Error(`Index fetch failed: ${indexRes.status}`)
       const jsonPaths = await indexRes.json()
 
@@ -44,7 +44,7 @@ const Portfolio = () => {
       const loaded = await Promise.all(
         jsonPaths.map(async (path) => {
           try {
-            const res = await fetch(s3Url(path))
+            const res = await fetch(s3Url(path), { cache: 'no-cache' })
             const data = await res.json()
 
             return {
