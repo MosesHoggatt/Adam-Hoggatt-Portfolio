@@ -22,7 +22,7 @@
   border: 1px solid #2a2a2a;
   border-radius: 6px;
   width: min(95vw, 1200px);
-  max-height: 92vh;
+  height: 92vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -56,6 +56,7 @@
   display: flex;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 /* ── Left column (image + thumbs) ────────────────────────────── */
@@ -128,6 +129,7 @@
 .lb-sidebar {
   width: 280px;
   flex: 0 0 280px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
