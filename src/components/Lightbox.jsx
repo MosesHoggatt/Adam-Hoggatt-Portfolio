@@ -47,52 +47,52 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
         <div className="lb-main">
 
           {/* Left: big image + thumbs below */}
-          <div className="lb-image-col">
-            <div className="lb-image-area">
-              {images.length > 1 && (
-                <button
-                  className="lb-nav lb-prev"
-                  onClick={() => setActiveIndex(i => Math.max(i - 1, 0))}
-                  disabled={activeIndex === 0}
-                  aria-label="Previous"
-                >‹</button>
-              )}
+          <div className="lb-image-frame">
+            <div className="lb-image-col">
+              <div className="lb-image-area">
+                {images.length > 1 && (
+                  <button
+                    className="lb-nav lb-prev"
+                    onClick={() => setActiveIndex(i => Math.max(i - 1, 0))}
+                    disabled={activeIndex === 0}
+                    aria-label="Previous"
+                  >‹</button>
+                )}
 
-              <div className="lb-image-frame">
-                {activeUrl
-                  ? <img src={activeUrl} alt={project.title} />
-                  : <div className="lb-no-image">No image available</div>}
+                <div className="lb-image-and-counter">
+                  {activeUrl
+                    ? <img src={activeUrl} alt={project.title} />
+                    : <div className="lb-no-image">No image available</div>}
+                  {images.length > 0 && (
+                    <p className="lb-counter">{activeIndex + 1} / {images.length}</p>
+                  )}
+                </div>
+
+                {images.length > 1 && (
+                  <button
+                    className="lb-nav lb-next"
+                    onClick={() => setActiveIndex(i => Math.min(i + 1, images.length - 1))}
+                    disabled={activeIndex === images.length - 1}
+                    aria-label="Next"
+                  >›</button>
+                )}
               </div>
 
+              {/* Thumbnail strip — below image area */}
               {images.length > 1 && (
-                <button
-                  className="lb-nav lb-next"
-                  onClick={() => setActiveIndex(i => Math.min(i + 1, images.length - 1))}
-                  disabled={activeIndex === images.length - 1}
-                  aria-label="Next"
-                >›</button>
+                <div className="lb-thumbs">
+                  {images.map((url, i) => (
+                    <button
+                      key={i}
+                      className={`lb-thumb${i === activeIndex ? ' lb-thumb-active' : ''}`}
+                      onClick={() => setActiveIndex(i)}
+                    >
+                      <img src={url} alt={`View ${i + 1}`} />
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
-
-            {/* Image counter — centered below main image */}
-            {images.length > 0 && (
-              <p className="lb-counter">{activeIndex + 1} / {images.length}</p>
-            )}
-
-            {/* Thumbnail strip — below counter */}
-            {images.length > 1 && (
-              <div className="lb-thumbs">
-                {images.map((url, i) => (
-                  <button
-                    key={i}
-                    className={`lb-thumb${i === activeIndex ? ' lb-thumb-active' : ''}`}
-                    onClick={() => setActiveIndex(i)}
-                  >
-                    <img src={url} alt={`View ${i + 1}`} />
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Right: info */}
