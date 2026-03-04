@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import awsConfig from '../aws-exports'
 import Lightbox from './Lightbox'
 import heroShot from '../assets/AdamHoggattHeroShot.jpg'
+import heroBanner from '../assets/AdamHoggattBanner.png'
 import './Portfolio.css'
 
 const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`
@@ -98,8 +99,11 @@ const Portfolio = () => {
           <div className="hero-text">
             <h1 className="hero-title">Adam Hoggatt</h1>
             <p className="hero-subtitle">Level Design Portfolio</p>
-            <p className="hero-role">Expert Level Designer · Treyarch</p>
+            <p className="hero-role">Expert Level Designer · Treyarch · Since 2008</p>
           </div>
+        </div>
+        <div className="hero-banner">
+          <img src={heroBanner} alt="" className="hero-banner-img" />
         </div>
       </header>
 
