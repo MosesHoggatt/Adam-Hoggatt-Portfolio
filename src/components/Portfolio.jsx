@@ -118,7 +118,8 @@ const Portfolio = () => {
       {/* ── Filter bar (built dynamically from loaded category data) ── */}
       {allCategories.length > 0 && (
         <div className="filter-bar">
-          {['All', ...allCategories].map(cat => (
+          {/* we display ‘All’ followed by categories in reverse order */}
+          {['All', ...[...allCategories].reverse()].map(cat => (
             <button
               key={cat}
               className={`filter-btn${activeFilter === cat ? ' active' : ''}`}
