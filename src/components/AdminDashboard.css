@@ -493,6 +493,21 @@
   color: #aaa;
   font-weight: 600;
 }
+.adm-img-badges {
+  display: flex;
+  gap: 0.25rem;
+  align-self: flex-start;
+  flex-wrap: wrap;
+}
+.adm-img-badge-map {
+  background: #2471a3;
+}
+.adm-img-btn-active {
+  background: rgba(36, 113, 163, 0.7) !important;
+  border-color: #2471a3 !important;
+  color: #fff !important;
+}
+
 .adm-img-upload {
   aspect-ratio: 16 / 9;
   border: 2px dashed #444;

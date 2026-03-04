@@ -7,11 +7,13 @@ const s3Url = (path) => `${S3_BASE}/${path}`
 
 const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextProject, onClose }) => {
   const images = (project?.images || []).map(s3Url)
+  const minimapUrl = project?.minimap ? s3Url(project.minimap) : null
   const [activeIndex, setActiveIndex] = useState(0)
+  const [showingMinimap, setShowingMinimap] = useState(false)
   const thumbsRef = useRef(null)
 
-  /* Reset index when project changes */
-  useEffect(() => { setActiveIndex(0) }, [project])
+  /* Reset index and minimap view when project changes */
+  useEffect(() => { setActiveIndex(0); setShowingMinimap(false) }, [project])
 
   /* Lock body scroll while open */
   useEffect(() => {
@@ -29,8 +31,8 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
   /* Keyboard navigation — arrows for images, [ ] for maps */
   const handleKey = useCallback((e) => {
     if (e.key === 'Escape')     onClose()
-    if (e.key === 'ArrowRight') setActiveIndex(i => (i + 1) % images.length)
-    if (e.key === 'ArrowLeft')  setActiveIndex(i => (i - 1 + images.length) % images.length)
+    if (e.key === 'ArrowRight') { setShowingMinimap(false); setActiveIndex(i => (i + 1) % images.length) }
+    if (e.key === 'ArrowLeft')  { setShowingMinimap(false); setActiveIndex(i => (i - 1 + images.length) % images.length) }
     if (e.key === '[' && projectIndex > 0)                      onPrevProject()
     if (e.key === ']' && projectIndex < totalProjects - 1)      onNextProject()
   }, [onClose, images.length, projectIndex, totalProjects, onPrevProject, onNextProject])
@@ -42,7 +44,7 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
 
   if (!project) return null
 
-  const activeUrl = images[activeIndex] || null
+  const activeUrl = showingMinimap ? minimapUrl : (images[activeIndex] || null)
 
   return (
     <div className="lb-backdrop" onClick={onClose}>
@@ -58,7 +60,7 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
           <div className="lb-image-frame">
             <div className="lb-image-col">
               <div className="lb-image-area">
-                {images.length > 1 && (
+                {!showingMinimap && images.length > 1 && (
                   <button
                     className="lb-nav lb-prev"
                     onClick={() => setActiveIndex(i => (i - 1 + images.length) % images.length)}
@@ -70,12 +72,12 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
                   {activeUrl
                     ? <img src={activeUrl} alt={project.title} />
                     : <div className="lb-no-image">No image available</div>}
-                  {images.length > 0 && (
+                  {!showingMinimap && images.length > 0 && (
                     <p className="lb-counter">{activeIndex + 1} / {images.length}</p>
                   )}
                 </div>
 
-                {images.length > 1 && (
+                {!showingMinimap && images.length > 1 && (
                   <button
                     className="lb-nav lb-next"
                     onClick={() => setActiveIndex(i => (i + 1) % images.length)}
@@ -91,7 +93,7 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
                     <button
                       key={i}
                       className={`lb-thumb${i === activeIndex ? ' lb-thumb-active' : ''}`}
-                      onClick={() => setActiveIndex(i)}
+                      onClick={() => { setShowingMinimap(false); setActiveIndex(i) }}
                     >
                       <img src={url} alt={`View ${i + 1}`} />
                     </button>
@@ -113,6 +115,19 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
 
             {project.description && (
               <p className="lb-desc">{project.description}</p>
+            )}
+
+            {minimapUrl && (
+              <div className="lb-minimap">
+                <p className="lb-minimap-label">Minimap</p>
+                <button
+                  className={`lb-minimap-btn${showingMinimap ? ' lb-minimap-active' : ''}`}
+                  onClick={() => setShowingMinimap(v => !v)}
+                  title="View minimap"
+                >
+                  <img src={minimapUrl} alt="Minimap" />
+                </button>
+              </div>
             )}
           </aside>
         </div>{/* end lb-main */}

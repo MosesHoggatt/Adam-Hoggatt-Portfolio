@@ -278,7 +278,39 @@
   border-color: #f26501;
   color: #111;
 }
-
+/* ── Minimap ────────────────────────────────────────────────── */
+.lb-minimap {
+  margin-top: 0.6rem;
+  border-top: 1px solid #2a2a2a;
+  padding-top: 0.8rem;
+}
+.lb-minimap-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 0.4rem;
+}
+.lb-minimap-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 2px solid #333;
+  border-radius: 3px;
+  background: #111;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  overflow: hidden;
+}
+.lb-minimap-btn:hover { border-color: #666; }
+.lb-minimap-btn.lb-minimap-active { border-color: #f26501; }
+.lb-minimap-btn img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 700px) {
   .lb-main { flex-direction: column; }

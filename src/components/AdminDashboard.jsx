@@ -39,12 +39,15 @@ const AdminDashboard = () => {
   const [catInput, setCatInput] = useState('')
   const [showCatDropdown, setShowCatDropdown] = useState(false)
   const [dragOverIndex, setDragOverIndex] = useState(null)
+  const [minimapIndex, setMinimapIndex] = useState(null)
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false)
 
   /* ── Refs ──────────────────────────────────────────────────── */
   const fileInputRef = useRef(null)
   const dragItem = useRef(null)
   const dragOverItem = useRef(null)
   const toastTimer = useRef(null)
+  const isDirtyRef = useRef(false)
 
   /* ════════════════════════════════════════════════════════════════
      DATA LOADING
@@ -112,6 +115,8 @@ const AdminDashboard = () => {
      EDITOR OPEN / CLOSE
      ════════════════════════════════════════════════════════════════ */
   const openEditor = (project = null) => {
+    isDirtyRef.current = false
+    setMinimapIndex(null)
     if (project) {
       setEditSlug(project.slug)
       setForm({
@@ -122,14 +127,24 @@ const AdminDashboard = () => {
         categories: [...(project.categories || [])],
         responsibilities: [...(project.responsibilities || [])],
       })
-      setImageList(
-        (project.images || []).map((path, i) => ({
-          id: `existing-${i}-${Date.now()}`,
-          path,
+      const galleryItems = (project.images || []).map((path, i) => ({
+        id: `existing-${i}-${Date.now()}`,
+        path,
+        file: null,
+        preview: s3Url(path),
+      }))
+      if (project.minimap) {
+        const mmItem = {
+          id: `minimap-${Date.now()}`,
+          path: project.minimap,
           file: null,
-          preview: s3Url(path),
-        }))
-      )
+          preview: s3Url(project.minimap),
+        }
+        setImageList([...galleryItems, mmItem])
+        setMinimapIndex(galleryItems.length)
+      } else {
+        setImageList(galleryItems)
+      }
     } else {
       setEditSlug(null)
       setForm({
@@ -145,6 +160,18 @@ const AdminDashboard = () => {
   }
 
   const closeEditor = () => {
+    if (isDirtyRef.current) {
+      setShowUnsavedModal(true)
+      return
+    }
+    imageList.forEach(item => { if (item.file) URL.revokeObjectURL(item.preview) })
+    setView('list')
+    setEditSlug(null)
+  }
+
+  const confirmDiscard = () => {
+    isDirtyRef.current = false
+    setShowUnsavedModal(false)
     imageList.forEach(item => { if (item.file) URL.revokeObjectURL(item.preview) })
     setView('list')
     setEditSlug(null)
@@ -160,11 +187,14 @@ const AdminDashboard = () => {
     try {
       const slug = form.slug.trim()
 
-      // 1. Upload new images
+      // 1. Upload gallery images + minimap separately
       const finalImages = []
-      for (const item of imageList) {
+      let finalMinimap = null
+      for (let i = 0; i < imageList.length; i++) {
+        const item = imageList[i]
+        let resolvedPath = null
         if (item.path) {
-          finalImages.push(item.path)
+          resolvedPath = item.path
         } else if (item.file) {
           const fileName = item.file.name.replace(/\s+/g, '-')
           const path = `projects/${slug}/images/${fileName}`
@@ -173,7 +203,11 @@ const AdminDashboard = () => {
             data: item.file,
             options: { contentType: item.file.type },
           }).result
-          finalImages.push(path)
+          resolvedPath = path
+        }
+        if (resolvedPath) {
+          if (i === minimapIndex) finalMinimap = resolvedPath
+          else finalImages.push(resolvedPath)
         }
       }
 
@@ -192,6 +226,7 @@ const AdminDashboard = () => {
         date: form.date,
         categories: form.categories,
         images: finalImages,
+        ...(finalMinimap ? { minimap: finalMinimap } : {}),
         responsibilities: form.responsibilities.filter(r => r.trim()),
         ...(editSlug ? {} : { createdAt: new Date().toISOString() }),
         updatedAt: new Date().toISOString(),
@@ -223,6 +258,7 @@ const AdminDashboard = () => {
       await rebuildIndex(updatedProjects)
 
       showToast(editSlug ? 'Level updated' : 'Level created')
+      isDirtyRef.current = false
       await fetchProjects()
       closeEditor()
     } catch (err) {
@@ -277,6 +313,7 @@ const AdminDashboard = () => {
   }
 
   const addImages = (files) => {
+    isDirtyRef.current = true
     const newItems = files.map((file, i) => ({
       id: `new-${Date.now()}-${i}`,
       path: null,
@@ -287,20 +324,39 @@ const AdminDashboard = () => {
   }
 
   const removeImage = (index) => {
+    isDirtyRef.current = true
     const item = imageList[index]
     if (item.path) setRemovedPaths(prev => [...prev, item.path])
     if (item.file) URL.revokeObjectURL(item.preview)
     setImageList(prev => prev.filter((_, i) => i !== index))
+    setMinimapIndex(prev => {
+      if (prev === null) return null
+      if (prev === index) return null
+      if (prev > index) return prev - 1
+      return prev
+    })
   }
 
   const setMainImage = (index) => {
     if (index === 0) return
+    isDirtyRef.current = true
+    setMinimapIndex(prev => {
+      if (prev === null) return null
+      if (prev === index) return 0
+      if (prev < index) return prev + 1
+      return prev
+    })
     setImageList(prev => {
       const copy = [...prev]
       const [moved] = copy.splice(index, 1)
       copy.unshift(moved)
       return copy
     })
+  }
+
+  const setMinimap = (index) => {
+    isDirtyRef.current = true
+    setMinimapIndex(prev => prev === index ? null : index)
   }
 
   const handleDragStart = (e, index) => {
@@ -322,10 +378,20 @@ const AdminDashboard = () => {
       setDragOverIndex(null)
       return
     }
+    isDirtyRef.current = true
+    const from = dragItem.current
+    const to = index
+    setMinimapIndex(prev => {
+      if (prev === null) return null
+      if (prev === from) return to
+      if (from < to && prev > from && prev <= to) return prev - 1
+      if (from > to && prev >= to && prev < from) return prev + 1
+      return prev
+    })
     setImageList(prev => {
       const copy = [...prev]
-      const [moved] = copy.splice(dragItem.current, 1)
-      copy.splice(index, 0, moved)
+      const [moved] = copy.splice(from, 1)
+      copy.splice(to, 0, moved)
       return copy
     })
     dragItem.current = null
@@ -344,12 +410,14 @@ const AdminDashboard = () => {
   const addCategory = (cat) => {
     const trimmed = cat.trim()
     if (!trimmed || form.categories.includes(trimmed)) return
+    isDirtyRef.current = true
     setForm(prev => ({ ...prev, categories: [...prev.categories, trimmed] }))
     setCatInput('')
     setShowCatDropdown(false)
   }
 
   const removeCategory = (cat) => {
+    isDirtyRef.current = true
     setForm(prev => ({
       ...prev,
       categories: prev.categories.filter(c => c !== cat),
@@ -383,6 +451,22 @@ const AdminDashboard = () => {
         <div className={`adm-toast adm-toast-${toast.type}`}
           onClick={() => setToast(null)}>
           {toast.msg}
+        </div>
+      )}
+
+      {/* Unsaved changes modal */}
+      {showUnsavedModal && (
+        <div className="adm-modal-backdrop" onClick={() => setShowUnsavedModal(false)}>
+          <div className="adm-modal" onClick={e => e.stopPropagation()}>
+            <h3>Unsaved Changes</h3>
+            <p>You have unsaved changes. Discard them and go back?</p>
+            <div className="adm-modal-actions">
+              <button className="adm-btn adm-btn-ghost"
+                onClick={() => setShowUnsavedModal(false)}>Keep Editing</button>
+              <button className="adm-btn adm-btn-danger"
+                onClick={confirmDiscard}>Discard Changes</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -522,6 +606,7 @@ const AdminDashboard = () => {
               <label>Title</label>
               <input type="text" value={form.title}
                 onChange={e => {
+                  isDirtyRef.current = true
                   const title = e.target.value
                   setForm(prev => ({
                     ...prev, title,
@@ -534,28 +619,31 @@ const AdminDashboard = () => {
             <div className="adm-field adm-field-slug">
               <label>Slug</label>
               <input type="text" value={form.slug}
-                onChange={e => setForm(prev => ({
-                  ...prev, slug: slugify(e.target.value)
-                }))}
+                onChange={e => {
+                  isDirtyRef.current = true
+                  setForm(prev => ({ ...prev, slug: slugify(e.target.value) }))
+                }}
                 placeholder="level-slug"
               />
             </div>
             <div className="adm-field adm-field-date">
               <label>Release Date</label>
               <input type="date" value={form.date}
-                onChange={e => setForm(prev => ({
-                  ...prev, date: e.target.value
-                }))}
+                onChange={e => {
+                  isDirtyRef.current = true
+                  setForm(prev => ({ ...prev, date: e.target.value }))
+                }}
               />
             </div>
           </div>
           <div className="adm-field">
             <label>Description</label>
             <textarea value={form.description} rows={8}
-              onChange={e => setForm(prev => ({
-                ...prev, description: e.target.value
-              }))}
-              placeholder="Project description"
+              onChange={e => {
+                isDirtyRef.current = true
+                setForm(prev => ({ ...prev, description: e.target.value }))
+              }}
+              placeholder="Level description"
             />
           </div>
         </section>
@@ -630,12 +718,20 @@ const AdminDashboard = () => {
               >
                 <img src={item.preview} alt="" />
                 <div className="adm-img-overlay">
-                  {index === 0 && <span className="adm-img-badge">Main</span>}
+                  <div className="adm-img-badges">
+                    {index === 0 && <span className="adm-img-badge">Main</span>}
+                    {index === minimapIndex && <span className="adm-img-badge adm-img-badge-map">Map</span>}
+                  </div>
                   <div className="adm-img-actions">
                     {index !== 0 && (
                       <button onClick={() => setMainImage(index)}
                         title="Set as main">&#9733;</button>
                     )}
+                    <button
+                      onClick={() => setMinimap(index)}
+                      title={index === minimapIndex ? 'Remove minimap' : 'Set as minimap'}
+                      className={index === minimapIndex ? 'adm-img-btn-active' : ''}
+                    >&#128204;</button>
                     <button onClick={() => removeImage(index)}
                       title="Remove">&times;</button>
                   </div>
