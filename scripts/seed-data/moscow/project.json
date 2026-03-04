@@ -1,0 +1,19 @@
+{
+  "title": "Moscow",
+  "slug": "moscow",
+  "date": "2020-09-08",
+  "categories": [
+    "Call of Duty: Black Ops Cold War"
+  ],
+  "description": "Moscow is one of the maps from the Black Ops Cold War beta and one of the first maps completed for the game.",
+  "responsibilities": [
+    "Majority of map design (gameplay)"
+  ],
+  "images": [
+    "projects/moscow/images/adam-hoggatt-logo.jpg",
+    "projects/moscow/images/cod_bo_cold_war_moscow_1-660-1080.jpg",
+    "projects/moscow/images/cod_bo_cold_war_moscow_3-681-1080.jpg",
+    "projects/moscow/images/moscowminimap.png"
+  ],
+  "createdAt": "2026-03-04T00:13:20.728Z"
+}

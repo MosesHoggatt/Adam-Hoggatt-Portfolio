@@ -1,0 +1,22 @@
+{
+  "title": "Der Schatten",
+  "slug": "der-schatten",
+  "date": "2018-10-12",
+  "categories": [
+    "Call of Duty: Black Ops 4"
+  ],
+  "description": "Der Schatten is another MP map that breaks the boundaries between MP and the zombies world. More from the Activision blog:\n\n“Der Schatten, one of three maps released for Black Ops Pass holders during Call of Duty: Black Ops 4’s Operation Apocalypse Z, brings us back in time for a Multiplayer map with a Zombies twist. Though undead won’t claw at you here, you do have to watch out for enemy players throughout the landscape.”",
+  "responsibilities": [
+    "Some map design (gameplay)",
+    "Adding a giant robot"
+  ],
+  "images": [
+    "projects/der-schatten/images/DerSchatten_MiniMap_BO4.jpg",
+    "projects/der-schatten/images/Op5_DER-SCHATTEN-02.jpg",
+    "projects/der-schatten/images/Op5_DER-SCHATTEN-04.jpg",
+    "projects/der-schatten/images/Op5_DER-SCHATTEN-05.jpg",
+    "projects/der-schatten/images/adam-hoggatt-logo.jpg",
+    "projects/der-schatten/images/der_shat.png"
+  ],
+  "createdAt": "2026-03-04T00:13:36.661Z"
+}

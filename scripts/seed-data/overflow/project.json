@@ -1,0 +1,26 @@
+{
+  "title": "Overflow",
+  "slug": "overflow",
+  "date": "2012-11-13",
+  "categories": [
+    "Call of Duty: Black Ops 2"
+  ],
+  "description": "Overflow is another classic style CoD map. the main fight runs down an urban street, with cuts through shops and houses. The long flank route runs along a flooded river bank.",
+  "responsibilities": [
+    "Initial paper design",
+    "Complete map design (gameplay)",
+    "Theming/map detail/polish"
+  ],
+  "images": [
+    "projects/overflow/images/adam-hoggatt-logo.jpg",
+    "projects/overflow/images/overflao_07.jpg",
+    "projects/overflow/images/overflow_00.jpg",
+    "projects/overflow/images/overflow_01.jpg",
+    "projects/overflow/images/overflow_03.jpg",
+    "projects/overflow/images/overflow_04.jpg",
+    "projects/overflow/images/overflow_05.jpg",
+    "projects/overflow/images/overflow_06.jpg",
+    "projects/overflow/images/overflow_map.png"
+  ],
+  "createdAt": "2026-03-04T00:25:23.341Z"
+}

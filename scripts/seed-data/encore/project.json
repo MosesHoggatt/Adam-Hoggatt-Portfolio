@@ -1,0 +1,18 @@
+{
+  "title": "Encore",
+  "slug": "encore",
+  "date": "2012-11-13",
+  "categories": [
+    "Call of Duty: Black Ops 2"
+  ],
+  "description": "Encore is a map from the third Black Ops II map pack (Uprising) and is based on an outdoor amphitheater along the river Thames in London. It paths through and around the stage set for a rock concert, allowing players to actually fight from the stage to the stands, through the concessions area and along the Thames itself.",
+  "responsibilities": [
+    "Initial paper design",
+    "Map design (gameplay)",
+    "Theming/map detail/polish"
+  ],
+  "images": [
+    "projects/encore/images/encore_00.jpg"
+  ],
+  "createdAt": "2026-03-04T00:25:03.235Z"
+}

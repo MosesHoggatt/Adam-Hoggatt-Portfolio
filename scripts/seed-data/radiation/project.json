@@ -1,0 +1,19 @@
+{
+  "title": "Radiation",
+  "slug": "radiation",
+  "date": "2010-11-09",
+  "categories": [
+    "Call of Duty: Black Ops"
+  ],
+  "description": "Radiation is the first of what I like to call the “The Nuclear Trifecta” (Nuketown, Radiation and Meltdown), 3 maps centered around nuclear themes. The warehouse full of liquid-filled tanks is a great diversion from the main paths, and offers a fresh gameplay experience, should you choose to venture in there. It’s also the first Treyarch map with a real scripted element (the large doors in the middle that both open to the tunnel below and become cover across the middle of the map. It’s also the first map to incorporate a hidden RCXD path for being extra sneaky.",
+  "responsibilities": [
+    "Initial paper design (basic layout)",
+    "Complete gameplay design (iteration and improvement on paper design throughout the design process)",
+    "Theming/map detail/polish",
+    "Spawning and technical aspects"
+  ],
+  "images": [
+    "projects/radiation/images/radiation_00.jpg"
+  ],
+  "createdAt": "2026-03-04T00:25:26.929Z"
+}

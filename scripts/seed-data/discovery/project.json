@@ -1,0 +1,18 @@
+{
+  "title": "Discovery",
+  "slug": "discovery",
+  "date": "2010-11-09",
+  "categories": [
+    "Call of Duty: Black Ops"
+  ],
+  "description": "Discovery was part of the first map pack for Black Ops called First Strike. It features a deep chasm with precarious ice bridges across the map center, making for a well defined “my side vs your side” experience. It includes several sniper overwatches across the map and a few sneaky paths for flanking.",
+  "responsibilities": [
+    "Map design (gameplay)",
+    "Theming/map detail/polish",
+    "Spawning and technical aspects"
+  ],
+  "images": [
+    "projects/discovery/images/discovery_01.jpg"
+  ],
+  "createdAt": "2026-03-04T00:25:16.393Z"
+}

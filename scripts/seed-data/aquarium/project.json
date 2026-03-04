@@ -1,0 +1,18 @@
+{
+  "title": "Aquarium",
+  "slug": "aquarium",
+  "date": "2015-11-06",
+  "categories": [
+    "Call of Duty: Black Ops 3"
+  ],
+  "description": "Aquarium was an interesting challenge because we were still figuring out how to use swimming as a meaningful form of navigation through the maps. The side water paths give the player a more concealed way to navigate those areas, as well as some interesting ways to cut into the building interiors.",
+  "responsibilities": [
+    "Initial paper design",
+    "Map design (gameplay)",
+    "Some detail"
+  ],
+  "images": [
+    "projects/aquarium/images/Aqaurium.jpg"
+  ],
+  "createdAt": "2026-03-04T00:24:55.238Z"
+}

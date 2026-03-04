@@ -1,0 +1,23 @@
+{
+  "title": "Nuketown",
+  "slug": "nuketown",
+  "date": "2010-11-09",
+  "categories": [
+    "Call of Duty: Black Ops",
+    "Call of Duty: Black Ops 2",
+    "Call of Duty: Black Ops 3",
+    "Call of Duty: Black Ops 4",
+    "Call of Duty: Black Ops 6"
+  ],
+  "description": "“Nuketown takes place in a nuclear test site designed to simulate a typical American neighborhood. The map itself started out as an “unofficial” project for Level Designer Adam Hoggatt, who took the idea and had a working design up and running in only two days. It was quickly a favorite among the Black Ops developers.” – CallofDuty.comMany articles, videos and other references to Nuketown can be found online. Here are a few of my favorites:\n\nGameologicalDextero – Behind the Scenes Creation of NuketownDextero – The History of Nuketown in Call of Duty",
+  "responsibilities": [
+    "Initial paper design/layout",
+    "Gameplay design",
+    "Theming/map detail/polish",
+    "Spawning and technical aspects"
+  ],
+  "images": [
+    "projects/nuketown/images/Nuketown.jpg"
+  ],
+  "createdAt": "2026-03-04T00:25:21.355Z"
+}

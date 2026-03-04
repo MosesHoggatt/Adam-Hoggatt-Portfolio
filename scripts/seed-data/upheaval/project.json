@@ -1,0 +1,17 @@
+{
+  "title": "Upheaval",
+  "slug": "upheaval",
+  "date": "2008-11-11",
+  "categories": [
+    "Call of Duty: World at War"
+  ],
+  "description": "Upheaval is the first map I worked on as an official Treyarch employee. It is a very classic CoD style map, with 3 lanes sewn together by open, 2 story houses. It has a plethora of window to window engagements and a wide open map center, for the especially brave.",
+  "responsibilities": [
+    "Basic multiplayer design (as with many of the maps in W@W, much of the map geometry was taken from a campaign mission)",
+    "Theming/map detail/polish"
+  ],
+  "images": [
+    "projects/upheaval/images/upheaval_001.jpg"
+  ],
+  "createdAt": "2026-03-04T00:25:33.396Z"
+}

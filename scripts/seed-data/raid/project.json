@@ -1,0 +1,20 @@
+{
+  "title": "Raid",
+  "slug": "raid",
+  "date": "2012-11-13",
+  "categories": [
+    "Call of Duty: Black Ops 2",
+    "Call of Duty: Black Ops 3",
+    "Call of Duty: Black Ops 4",
+    "Call of Duty: Black Ops Cold War"
+  ],
+  "description": "Raid is one of my favorites. Unlike some maps, it took many many iterations and complete redesigns to get it right. Each early iteration, however, contributed something interesting that made it into the final design, like the drive into the garage area and the roundabout in front. Easter eggs include my name on the mailbox (which can only be seen by flying a quadrotor out of bounds and catching a glimpse before it is destroyed) and basketballs that can be shot into the hoop in the basketball court.",
+  "responsibilities": [
+    "Map design (gameplay)",
+    "Theming/map detail"
+  ],
+  "images": [
+    "projects/raid/images/raid_00.jpg"
+  ],
+  "createdAt": "2026-03-04T00:25:05.901Z"
+}

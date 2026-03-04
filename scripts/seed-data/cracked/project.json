@@ -1,0 +1,24 @@
+{
+  "title": "Cracked",
+  "slug": "cracked",
+  "date": "2010-11-09",
+  "categories": [
+    "Call of Duty: Black Ops"
+  ],
+  "description": "Cracked is the largest map in Black Ops, but doesn’t play like a large map. It has a central building with a hump that makes for intense battle across the map center. It’s a classic COD map in that it has many buildings and window battles, alleys and long street engagements.",
+  "responsibilities": [
+    "Gameplay design",
+    "Theming/map detail/polish",
+    "Spawning and technical aspects"
+  ],
+  "images": [
+    "projects/cracked/images/cracked_00.jpg",
+    "projects/cracked/images/cracked_01.jpg",
+    "projects/cracked/images/cracked_02.jpg",
+    "projects/cracked/images/cracked_03.jpg",
+    "projects/cracked/images/cracked_04.jpg",
+    "projects/cracked/images/cracked_05.jpg",
+    "projects/cracked/images/cracked_map.png"
+  ],
+  "createdAt": "2026-03-04T00:25:29.448Z"
+}
