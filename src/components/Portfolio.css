@@ -190,15 +190,16 @@
 
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .hero-shot { height: 360px; }
-  .hero-title { font-size: 2.2rem; }
+  .hero-shot { width: 90px; height: 90px; }
+  .hero-title { font-size: 1.5rem; }
 }
 
 @media (max-width: 600px) {
-  .hero-shot { height: 240px; }
-  .hero-overlay { padding: 1.2rem 1rem; }
-  .hero-title { font-size: 1.8rem; }
-  .hero-subtitle { font-size: 0.8rem; }
+  .hero { padding: 0.9rem 1rem; gap: 1rem; }
+  .hero-shot { width: 70px; height: 70px; }
+  .hero-name { display: none; }
+  .hero-title { font-size: 1.2rem; }
+  .hero-subtitle { font-size: 0.75rem; }
   .filter-bar { padding: 1rem; gap: 0.4rem; }
   .filter-btn { font-size: 0.72rem; padding: 0.35rem 0.7rem; }
   .projects-grid { padding: 0 1rem 3rem; gap: 1rem; }

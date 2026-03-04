@@ -21,6 +21,12 @@ const Portfolio = () => {
   const [error, setError] = useState(null)
   const [lightboxProject, setLightboxProject] = useState(null)
 
+  /* Lock body scroll when detail panel is open */
+  useEffect(() => {
+    document.body.style.overflow = lightboxProject ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [lightboxProject])
+
   useEffect(() => {
     fetchProjects()
   }, [])
@@ -109,18 +115,19 @@ const Portfolio = () => {
     : projects.filter(p => p.categories.includes(activeFilter))
 
   return (
-    <div className="portfolio">
+    <div className={`portfolio${lightboxProject ? ' portfolio-detail' : ''}`}>
       {/* ── Hero ── */}
       <header className="hero">
         <img src={heroShot} alt="Adam Hoggatt" className="hero-shot" />
-        <div className="hero-overlay">
-          <h1 className="hero-title">Level Design</h1>
-          <p className="hero-subtitle">Adam Hoggatt · Expert Level Designer · Treyarch</p>
+        <div className="hero-text">
+          <p className="hero-name">Adam Hoggatt</p>
+          <h1 className="hero-title">Level Design<br />Portfolio</h1>
+          <p className="hero-subtitle">Expert Level Designer · Treyarch</p>
         </div>
       </header>
 
       {/* ── Filter bar (built dynamically from loaded category data) ── */}
-      {allCategories.length > 0 && (
+      {!lightboxProject && allCategories.length > 0 && (
         <div className="filter-bar">
           {/* we display ‘All’ followed by categories in reverse order */}
           {['All', ...[...allCategories].reverse()].map(cat => (
@@ -136,42 +143,46 @@ const Portfolio = () => {
       )}
 
       {/* ── Grid ── */}
-      <main className="projects-grid">
-        {loading && <p className="status-msg">Loading projects…</p>}
-        {error  && <p className="status-msg error-msg">{error}</p>}
-        {!loading && !error && projects.length === 0 && (
-          <p className="status-msg">No projects yet. Check back soon.</p>
-        )}
+      {!lightboxProject && (
+        <main className="projects-grid">
+          {loading && <p className="status-msg">Loading projects…</p>}
+          {error  && <p className="status-msg error-msg">{error}</p>}
+          {!loading && !error && projects.length === 0 && (
+            <p className="status-msg">No projects yet. Check back soon.</p>
+          )}
 
-        {filteredProjects.map(project => (
-          <article
-            key={project.slug}
-            className="project-card"
-            onClick={() => setLightboxProject(project)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={e => e.key === 'Enter' && setLightboxProject(project)}
-          >
-            <div className="card-image">
-              {project.thumbnailUrl
-                ? <img src={project.thumbnailUrl} alt={project.title} />
-                : <div className="image-placeholder" />}
-            </div>
-            <div className="card-body">
-              <h2 className="card-title">{project.title}</h2>
-              <div className="card-tags">
-                {project.categories.map(c => (
-                  <span key={c} className="tag">{shortName(c)}</span>
-                ))}
+          {filteredProjects.map(project => (
+            <article
+              key={project.slug}
+              className="project-card"
+              onClick={() => setLightboxProject(project)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={e => e.key === 'Enter' && setLightboxProject(project)}
+            >
+              <div className="card-image">
+                {project.thumbnailUrl
+                  ? <img src={project.thumbnailUrl} alt={project.title} />
+                  : <div className="image-placeholder" />}
               </div>
-            </div>
-          </article>
-        ))}
-      </main>
+              <div className="card-body">
+                <h2 className="card-title">{project.title}</h2>
+                <div className="card-tags">
+                  {project.categories.map(c => (
+                    <span key={c} className="tag">{shortName(c)}</span>
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
+        </main>
+      )}
 
-      <footer className="site-footer">
-        <p>&copy; {new Date().getFullYear()} Adam Hoggatt. All rights reserved.</p>
-      </footer>
+      {!lightboxProject && (
+        <footer className="site-footer">
+          <p>&copy; {new Date().getFullYear()} Adam Hoggatt. All rights reserved.</p>
+        </footer>
+      )}
 
       {lightboxProject && (
         <Lightbox project={lightboxProject} onClose={() => setLightboxProject(null)} />
