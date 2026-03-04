@@ -19,7 +19,7 @@
   background: linear-gradient(
     to right,
     rgba(0, 0, 0, 0.82) 0%,
-    rgba(0, 0, 0, 0.55) 55%,
+    rgba(0, 0, 0, 0.5)  45%,
     rgba(0, 0, 0, 0)    100%
   );
 }
