@@ -5,7 +5,7 @@ import './Lightbox.css'
 const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`
 const s3Url = (path) => `${S3_BASE}/${path}`
 
-const Lightbox = ({ project, onClose }) => {
+const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextProject, onClose }) => {
   const images = (project?.images || []).map(s3Url)
   const [activeIndex, setActiveIndex] = useState(0)
 
@@ -18,12 +18,14 @@ const Lightbox = ({ project, onClose }) => {
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  /* Keyboard navigation */
+  /* Keyboard navigation — arrows for images, [ ] for maps */
   const handleKey = useCallback((e) => {
     if (e.key === 'Escape')     onClose()
     if (e.key === 'ArrowRight') setActiveIndex(i => Math.min(i + 1, images.length - 1))
     if (e.key === 'ArrowLeft')  setActiveIndex(i => Math.max(i - 1, 0))
-  }, [onClose, images.length])
+    if (e.key === '[' && projectIndex > 0)                      onPrevProject()
+    if (e.key === ']' && projectIndex < totalProjects - 1)      onNextProject()
+  }, [onClose, images.length, projectIndex, totalProjects, onPrevProject, onNextProject])
 
   useEffect(() => {
     document.addEventListener('keydown', handleKey)
@@ -106,6 +108,25 @@ const Lightbox = ({ project, onClose }) => {
               <p className="lb-counter">{activeIndex + 1} / {images.length}</p>
             )}
           </aside>
+        </div>{/* end lb-main */}
+
+        {/* ── Bottom footer: prev/next map + title ── */}
+        <div className="lb-footer">
+          <button
+            className="lb-footer-nav lb-footer-prev"
+            onClick={onPrevProject}
+            disabled={projectIndex === 0}
+            aria-label="Previous map"
+          >&#8592; Prev</button>
+
+          <span className="lb-footer-title">{project.title}</span>
+
+          <button
+            className="lb-footer-nav lb-footer-next"
+            onClick={onNextProject}
+            disabled={projectIndex === totalProjects - 1}
+            aria-label="Next map"
+          >Next &#8594;</button>
         </div>
       </div>
     </div>

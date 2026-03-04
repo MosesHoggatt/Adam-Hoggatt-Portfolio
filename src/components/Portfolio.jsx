@@ -18,7 +18,7 @@ const Portfolio = () => {
   const [activeFilter, setActiveFilter] = useState('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [lightboxProject, setLightboxProject] = useState(null)
+  const [lightboxIndex, setLightboxIndex] = useState(null)
 
   useEffect(() => {
     fetchProjects()
@@ -126,14 +126,14 @@ const Portfolio = () => {
           <p className="status-msg">No projects yet. Check back soon.</p>
         )}
 
-        {filteredProjects.map(project => (
+        {filteredProjects.map((project, idx) => (
           <article
             key={project.slug}
             className="project-card"
-            onClick={() => setLightboxProject(project)}
+            onClick={() => setLightboxIndex(idx)}
             role="button"
             tabIndex={0}
-            onKeyDown={e => e.key === 'Enter' && setLightboxProject(project)}
+            onKeyDown={e => e.key === 'Enter' && setLightboxIndex(idx)}
           >
             <div className="card-image">
               {project.images.length > 0
@@ -156,8 +156,15 @@ const Portfolio = () => {
         <p>&copy; {new Date().getFullYear()} Adam Hoggatt. All rights reserved.</p>
       </footer>
 
-      {lightboxProject && (
-        <Lightbox project={lightboxProject} onClose={() => setLightboxProject(null)} />
+      {lightboxIndex !== null && (
+        <Lightbox
+          project={filteredProjects[lightboxIndex]}
+          projectIndex={lightboxIndex}
+          totalProjects={filteredProjects.length}
+          onPrevProject={() => setLightboxIndex(i => Math.max(i - 1, 0))}
+          onNextProject={() => setLightboxIndex(i => Math.min(i + 1, filteredProjects.length - 1))}
+          onClose={() => setLightboxIndex(null)}
+        />
       )}
     </div>
   )
