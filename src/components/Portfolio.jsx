@@ -84,7 +84,13 @@ const Portfolio = () => {
 
       // 5. Build the category filter list from whatever is in the data
       const catSet = new Set(valid.flatMap(p => p.categories))
-      setAllCategories([...catSet])
+      // keep Warzone filter at the very end of the list
+      let cats = [...catSet]
+      const warzone = 'Call of Duty: Warzone'
+      if (cats.includes(warzone)) {
+        cats = cats.filter(c => c !== warzone).concat(warzone)
+      }
+      setAllCategories(cats)
       setProjects(valid)
     } catch (err) {
       console.error('Error loading projects from S3:', err)
