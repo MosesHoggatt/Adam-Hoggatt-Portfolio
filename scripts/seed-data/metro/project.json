@@ -11,6 +11,8 @@
     "Complete map design (gameplay)",
     "Theming/map detail/polish"
   ],
-  "images": [],
+  "images": [
+    "projects/metro/images/Metro.jpg"
+  ],
   "createdAt": "2026-03-04T00:24:53.055Z"
 }

@@ -5,7 +5,7 @@
   "categories": [
     "Call of Duty: Black Ops 4"
   ],
-  "description": "Remnant is a multiplayer map featuring lore from the zombies universe. More on Remnant from the Treyarch blog:\n\n“Hop off your tour bus and visit Remnant, a modern day museum that specializes in collecting and showcasing curiosities, oddities, and nightmares surrounding Zombies-related events. A recently purchased relic has unleashed chaos and death, wiping out everyone in the museum. For those who dare to trek past the Bio Response Initiative vans, you’ll discover various exhibits modeled around epic moments in Zombies history, including a familiar bus and diner that offer a distinct Multiplayer experience.\n\nRemnant is a large-scale map with wide spacing for longer engagements as well as close to mid-range firefights among various part of the interiors. The map is primarily indoors, so ground-based Scorestreaks will play well. And with a larger map, moving around the outside (in or out of the water) or using a telepad to teleport quickly to another location is ideal to finding and eliminating enemies. Take in the sights and stop by the gift shop if you have a chance between battles to enjoy this specialty museum in the heart of Louisiana.”",
+  "description": "Remnant is a multiplayer map featuring lore from the zombies universe. More on Remnant from the Treyarch blog:\n\n\u201cHop off your tour bus and visit Remnant, a modern day museum that specializes in collecting and showcasing curiosities, oddities, and nightmares surrounding Zombies-related events. A recently purchased relic has unleashed chaos and death, wiping out everyone in the museum. For those who dare to trek past the Bio Response Initiative vans, you\u2019ll discover various exhibits modeled around epic moments in Zombies history, including a familiar bus and diner that offer a distinct Multiplayer experience.\n\nRemnant is a large-scale map with wide spacing for longer engagements as well as close to mid-range firefights among various part of the interiors. The map is primarily indoors, so ground-based Scorestreaks will play well. And with a larger map, moving around the outside (in or out of the water) or using a telepad to teleport quickly to another location is ideal to finding and eliminating enemies. Take in the sights and stop by the gift shop if you have a chance between battles to enjoy this specialty museum in the heart of Louisiana.\u201d",
   "responsibilities": [
     "Map design (gameplay)",
     "Some theming/map detail"
@@ -13,7 +13,6 @@
   "images": [
     "projects/remnant/images/Contraband_MiniMap_BO4.jpg",
     "projects/remnant/images/Remnant_BO4MP.png",
-    "projects/remnant/images/adam-hoggatt-logo.jpg",
     "projects/remnant/images/remnant.png"
   ],
   "createdAt": "2026-03-04T00:26:44.820Z"

@@ -143,8 +143,9 @@ const STUBS = {
 
     const s3Images = await listS3Images(slug)
     // Filter out WordPress thumbnail resizes (e.g. -400x284.jpg / .png) but keep native .webp
+    // Also drop the site logo that leaks in from scraped nav HTML
     const THUMBNAIL_RE = /-\d+x\d+\.(jpe?g|png)$/i
-    const filtered = s3Images.filter(k => !THUMBNAIL_RE.test(k))
+    const filtered = s3Images.filter(k => !THUMBNAIL_RE.test(k) && !k.includes('adam-hoggatt-logo'))
 
     const data = JSON.parse(fs.readFileSync(jsonFile, 'utf8'))
     data.images = filtered
