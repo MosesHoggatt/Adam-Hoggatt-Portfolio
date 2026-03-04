@@ -93,17 +93,16 @@ const Portfolio = () => {
   return (
     <div className="portfolio">
       {/* ── Hero ── */}
-      <header className="hero">
-        <div className="hero-inner">
-          <img src={heroShot} alt="Adam Hoggatt" className="hero-shot" />
-          <div className="hero-text">
-            <h1 className="hero-title">Adam Hoggatt</h1>
-            <p className="hero-subtitle">Level Design Portfolio</p>
-            <p className="hero-role">Expert Level Designer · Treyarch · Since 2008</p>
+      <header className="hero" style={{ backgroundImage: `url(${heroBanner})` }}>
+        <div className="hero-overlay">
+          <div className="hero-inner">
+            <img src={heroShot} alt="Adam Hoggatt" className="hero-shot" />
+            <div className="hero-text">
+              <h1 className="hero-title">Adam Hoggatt</h1>
+              <p className="hero-subtitle">Level Design Portfolio</p>
+              <p className="hero-role">Expert Level Designer · Treyarch · Since 2008</p>
+            </div>
           </div>
-        </div>
-        <div className="hero-banner">
-          <img src={heroBanner} alt="" className="hero-banner-img" />
         </div>
       </header>
 

@@ -9,7 +9,13 @@
 /* ── Hero ─────────────────────────────────────────────────────── */
 .hero {
   background-color: #1a1a1a;
+  background-size: cover;
+  background-position: center;
   border-bottom: 3px solid #f26501;
+}
+
+.hero-overlay {
+  background: rgba(10, 10, 10, 0.62);
 }
 
 .hero-inner {
@@ -63,19 +69,6 @@
   margin: 0;
 }
 
-/* ── Hero banner ──────────────────────────────────────────────── */
-.hero-banner {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 2rem 1.2rem;
-}
-.hero-banner-img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 4px;
-  object-fit: cover;
-}
 
 /* ── Filter bar ───────────────────────────────────────────────── */
 .filter-bar {
