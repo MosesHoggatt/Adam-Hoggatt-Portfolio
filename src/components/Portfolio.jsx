@@ -1,21 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
-import { list, getUrl, downloadData } from 'aws-amplify/storage'
+import { useState, useEffect } from 'react'
+import { list } from 'aws-amplify/storage'
 import awsConfig from '../aws-exports'
 import Lightbox from './Lightbox'
 import heroShot from '../assets/AdamHoggattHeroShot.jpg'
 import './Portfolio.css'
 
-// Module-level cache: S3 path → signed URL string.
-// Persists across re-renders and filter changes for the lifetime of the session.
-const urlCache = new Map()
+const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`
 
-const getCachedUrl = async (path) => {
-  if (urlCache.has(path)) return urlCache.get(path)
-  const { url } = await getUrl({ path })
-  const str = url.toString()
-  urlCache.set(path, str)
-  return str
-}
+// Convert an S3 storage path (e.g. "projects/raid/images/raid.jpg")
+// to a public HTTPS URL — no signing, no Cognito needed.
+const s3Url = (path) => `${S3_BASE}/${path}`
 
 // Returns true only if Amplify Storage has been configured with real AWS values.
 const isAmplifyConfigured = () => {
@@ -26,15 +20,12 @@ const isAmplifyConfigured = () => {
 const shortName = (str) => str.replace('Call of Duty: ', '')
 
 const Portfolio = () => {
-  const [projects, setProjects] = useState([])   // full project objects from S3
-  const [allCategories, setAllCategories] = useState([]) // derived from loaded data
+  const [projects, setProjects] = useState([])
+  const [allCategories, setAllCategories] = useState([])
   const [activeFilter, setActiveFilter] = useState('All')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lightboxProject, setLightboxProject] = useState(null)
-  // thumbnailUrls: slug → url string, updated async after cards render
-  const [thumbnailUrls, setThumbnailUrls] = useState({})
-  const resolving = useRef(false)
 
   useEffect(() => {
     fetchProjects()
@@ -65,12 +56,12 @@ const Portfolio = () => {
         return
       }
 
-      // 3. Download and parse each manifest — no URL resolution here
+      // 3. Fetch and parse each manifest directly — no Amplify credential needed
       const loaded = await Promise.all(
         jsonFiles.map(async (file) => {
           try {
-            const dl = await downloadData({ path: file.path }).result
-            const data = JSON.parse(await dl.body.text())
+            const res = await fetch(s3Url(file.path))
+            const data = await res.json()
 
             return {
               title: data.title || '',
@@ -99,23 +90,7 @@ const Portfolio = () => {
         cats = cats.filter(c => c !== warzone).concat(warzone)
       }
       setAllCategories(cats)
-
-      // 5. Render cards immediately — no thumbnails yet
       setProjects(valid)
-      setLoading(false)
-
-      // 6. Resolve thumbnail URLs in the background, one at a time to avoid rate-limits
-      if (!resolving.current) {
-        resolving.current = true
-        for (const project of valid) {
-          if (project.images.length === 0) continue
-          try {
-            const url = await getCachedUrl(project.images[0])
-            setThumbnailUrls(prev => ({ ...prev, [project.slug]: url }))
-          } catch { /* skip */ }
-        }
-        resolving.current = false
-      }
     } catch (err) {
       console.error('Error loading projects from S3:', err)
       setError('Could not load projects. Please try again later.')
@@ -177,8 +152,8 @@ const Portfolio = () => {
             onKeyDown={e => e.key === 'Enter' && setLightboxProject(project)}
           >
             <div className="card-image">
-              {thumbnailUrls[project.slug]
-                ? <img src={thumbnailUrls[project.slug]} alt={project.title} loading="lazy" />
+              {project.images.length > 0
+                ? <img src={s3Url(project.images[0])} alt={project.title} loading="lazy" />
                 : <div className="image-placeholder" />}
             </div>
             <div className="card-body">
