@@ -4,20 +4,16 @@ on:
   push:
     branches: [dev]
 
-# Permissions required by actions/deploy-pages
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
-# Only one concurrent deployment to GitHub Pages at a time
 concurrency:
   group: "pages"
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build
+  build-and-deploy:
+    name: Build & Deploy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,31 +33,19 @@ jobs:
           VITE_BASE_PATH: /Adam-Hoggatt-Portfolio/
         run: npm run build
 
-      # Copies index.html → 404.html so client-side routing (React Router)
-      # works when a user lands on a sub-path directly on GitHub Pages.
-      - name: Copy index.html as 404.html for SPA routing
+      # SPA routing: a request for any unknown path returns 404.html,
+      # which is a copy of index.html and lets React Router handle the route.
+      - name: Copy index.html as 404.html
         run: cp dist/index.html dist/404.html
 
       # Prevent GitHub Pages from running Jekyll on the built output
       - name: Add .nojekyll
         run: touch dist/.nojekyll
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: "./dist"
-
-  deploy:
-    name: Deploy
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true
