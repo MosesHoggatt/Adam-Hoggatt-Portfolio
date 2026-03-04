@@ -54,6 +54,7 @@ const Portfolio = () => {
               date: data.date || '',
               categories: Array.isArray(data.categories) ? data.categories : [],
               images: Array.isArray(data.images) ? data.images : [],
+              minimap: data.minimap || null,
             }
           } catch (err) {
             console.warn('Failed to load project:', path, err)
