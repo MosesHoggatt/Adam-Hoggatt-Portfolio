@@ -22,7 +22,7 @@
   border: 1px solid #2a2a2a;
   border-radius: 6px;
   width: min(95vw, 1200px);
-  height: 92vh;
+  height: 68vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -65,16 +65,18 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   background: #0d0d0d;
 }
 
 /* ── Image area ───────────────────────────────────────────────── */
 .lb-image-area {
   flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(55vh, 560px);
   display: flex;
   align-items: center;
   position: relative;
-
 }
 
 .lb-image-frame {
@@ -82,9 +84,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Fixed normalized container — large enough for most screenshots */
   width: 100%;
-  height: 540px;
+  height: 100%;
   padding: 1rem 3rem;
   box-sizing: border-box;
 }
@@ -163,6 +164,7 @@
 
 /* ── Thumbnail strip — below main image ─────────────────────── */
 .lb-thumbs {
+  flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
   gap: 0.3rem;
@@ -268,7 +270,7 @@
     max-height: 35vh;
   }
 
-  .lb-image-frame { padding: 0.5rem 2.5rem; height: 260px; }
-  .lb-thumb { width: 72px; flex-basis: 72px; }
+  .lb-image-area { max-height: 45vh; }
+  .lb-image-frame { padding: 0.5rem 2.5rem; }
   .lb-thumb { width: 72px; flex-basis: 72px; }
 }
