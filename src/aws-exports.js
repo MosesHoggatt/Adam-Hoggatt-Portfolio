@@ -5,9 +5,9 @@
 const awsconfig = {
   Auth: {
     Cognito: {
-      userPoolId: 'YOUR_USER_POOL_ID', // Replace after running 'amplify add auth'
-      userPoolClientId: 'YOUR_WEB_CLIENT_ID', // Replace after running 'amplify add auth'
-      identityPoolId: 'YOUR_IDENTITY_POOL_ID', // Replace after running 'amplify add auth'
+      userPoolId: 'us-east-1_B5ijTwafm',
+      userPoolClientId: '50t6absgkoc8j3suc107lvctb7',
+      identityPoolId: 'us-east-1:0d5770be-c94f-4ae2-8183-3bd7e4ec791b',
       loginWith: {
         email: true,
       },
@@ -22,14 +22,14 @@ const awsconfig = {
         requireLowercase: true,
         requireUppercase: true,
         requireNumbers: true,
-        requireSpecialCharacters: true,
+        requireSpecialCharacters: false,
       },
     },
   },
   Storage: {
     S3: {
-      bucket: 'YOUR_S3_BUCKET_NAME', // Replace after running 'amplify add storage'
-      region: 'us-east-1', // Replace with your region
+      bucket: 'adam-hoggatt-portfolio-content',
+      region: 'us-east-1',
     },
   },
 };
