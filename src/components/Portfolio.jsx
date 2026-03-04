@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import awsConfig from '../aws-exports'
 import Lightbox from './Lightbox'
 import heroShot from '../assets/AdamHoggattHeroShot.jpg'
-import heroBanner from '../assets/AdamHoggattBanner.png'
+import heroBanner from '../assets/AdamHoggattBanner.jpg'
 import './Portfolio.css'
 
 const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`

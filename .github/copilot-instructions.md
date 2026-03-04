@@ -8,6 +8,7 @@ Use this file to provide workspace-specific custom instructions to Copilot. For 
 - [x] Create and Run Task Completed: No task needed for static webpage.
 - [ ] Launch the Project
 - [x] Ensure Documentation is Complete Completed: Created README.md and cleaned up copilot-instructions.md.
+- [ ] Repository pushes should target **dev only** unless user explicitly says otherwise.
 
 ## Execution Guidelines
 PROGRESS TRACKING:
@@ -27,6 +28,7 @@ DEVELOPMENT RULES:
 - Use placeholders only with a note that they should be replaced.
 - Use VS Code API tool only for VS Code extension projects.
 - Once the project is created, it is already opened in Visual Studio Code—do not suggest commands to open this project in Visual Studio again.
+- Avoid automatically forwarding commits from `dev` to `master` unless the user requests it; default to pushing only to `dev`.
 - If the project setup information has additional rules, follow them strictly.
 
 FOLDER CREATION RULES:
