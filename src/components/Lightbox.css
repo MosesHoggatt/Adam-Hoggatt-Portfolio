@@ -22,7 +22,7 @@
   border: 1px solid #2a2a2a;
   border-radius: 6px;
   width: min(95vw, 1200px);
-  height: 68vh;
+  height: min(700px, 90vh);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -73,7 +73,6 @@
 .lb-image-area {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: min(55vh, 560px);
   display: flex;
   align-items: center;
   position: relative;
@@ -202,6 +201,8 @@
   font-size: 0.75rem;
   color: #555;
   text-align: center;
+  padding: 0.3rem 0;
+  background: #0d0d0d;
   margin: 0;
 }
 

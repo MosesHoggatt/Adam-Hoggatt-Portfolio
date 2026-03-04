@@ -74,7 +74,12 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
               )}
             </div>
 
-            {/* Thumbnail strip — below main image */}
+            {/* Image counter — centered below main image */}
+            {images.length > 0 && (
+              <p className="lb-counter">{activeIndex + 1} / {images.length}</p>
+            )}
+
+            {/* Thumbnail strip — below counter */}
             {images.length > 1 && (
               <div className="lb-thumbs">
                 {images.map((url, i) => (
@@ -102,10 +107,6 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
 
             {project.description && (
               <p className="lb-desc">{project.description}</p>
-            )}
-
-            {images.length > 0 && (
-              <p className="lb-counter">{activeIndex + 1} / {images.length}</p>
             )}
           </aside>
         </div>{/* end lb-main */}
