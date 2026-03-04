@@ -8,6 +8,7 @@ const awsconfig = {
       userPoolId: 'us-east-1_B5ijTwafm',
       userPoolClientId: '50t6absgkoc8j3suc107lvctb7',
       identityPoolId: 'us-east-1:0d5770be-c94f-4ae2-8183-3bd7e4ec791b',
+      allowGuestAccess: true,
       loginWith: {
         email: true,
       },
