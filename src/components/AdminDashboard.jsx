@@ -38,6 +38,7 @@ const AdminDashboard = () => {
   const [removedPaths, setRemovedPaths] = useState([])
   const [catInput, setCatInput] = useState('')
   const [showCatDropdown, setShowCatDropdown] = useState(false)
+  const [dragOverIndex, setDragOverIndex] = useState(null)
 
   /* ── Refs ──────────────────────────────────────────────────── */
   const fileInputRef = useRef(null)
@@ -75,7 +76,7 @@ const AdminDashboard = () => {
       setAllCategories([...cats].sort())
     } catch (err) {
       console.error('Error loading projects:', err)
-      showToast('Error loading projects', 'error')
+      showToast('Error loading levels', 'error')
     } finally {
       setLoading(false)
     }
@@ -221,7 +222,7 @@ const AdminDashboard = () => {
       }
       await rebuildIndex(updatedProjects)
 
-      showToast(editSlug ? 'Project updated' : 'Project created')
+      showToast(editSlug ? 'Level updated' : 'Level created')
       await fetchProjects()
       closeEditor()
     } catch (err) {
@@ -247,7 +248,7 @@ const AdminDashboard = () => {
       await remove({ path: `projects/${slug}.json` })
       const updatedProjects = projects.filter(p => p.slug !== slug)
       await rebuildIndex(updatedProjects)
-      showToast('Project deleted')
+      showToast('Level deleted')
       await fetchProjects()
       setDeleteTarget(null)
     } catch (err) {
@@ -302,23 +303,39 @@ const AdminDashboard = () => {
     })
   }
 
-  const handleDragStart = (index) => { dragItem.current = index }
-  const handleDragEnter = (index) => { dragOverItem.current = index }
-  const handleDragEnd = () => {
-    if (dragItem.current === null || dragOverItem.current === null) return
-    if (dragItem.current === dragOverItem.current) {
-      dragItem.current = null
-      dragOverItem.current = null
+  const handleDragStart = (e, index) => {
+    dragItem.current = index
+    e.dataTransfer.effectAllowed = 'move'
+  }
+  const handleDragEnter = (e, index) => {
+    e.preventDefault()
+    dragOverItem.current = index
+    setDragOverIndex(index)
+  }
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+  const handleDrop = (e, index) => {
+    e.preventDefault()
+    if (dragItem.current === null || dragItem.current === index) {
+      setDragOverIndex(null)
       return
     }
     setImageList(prev => {
       const copy = [...prev]
       const [moved] = copy.splice(dragItem.current, 1)
-      copy.splice(dragOverItem.current, 0, moved)
+      copy.splice(index, 0, moved)
       return copy
     })
     dragItem.current = null
     dragOverItem.current = null
+    setDragOverIndex(null)
+  }
+  const handleDragEnd = () => {
+    dragItem.current = null
+    dragOverItem.current = null
+    setDragOverIndex(null)
   }
 
   /* ════════════════════════════════════════════════════════════════
@@ -373,7 +390,7 @@ const AdminDashboard = () => {
       {deleteTarget && (
         <div className="adm-modal-backdrop" onClick={() => setDeleteTarget(null)}>
           <div className="adm-modal" onClick={e => e.stopPropagation()}>
-            <h3>Delete Project</h3>
+            <h3>Delete Level</h3>
             <p>
               Are you sure you want to delete <strong>{deleteTarget.title}</strong>?
               This will remove all images and cannot be undone.
@@ -383,7 +400,7 @@ const AdminDashboard = () => {
                 onClick={() => setDeleteTarget(null)}>Cancel</button>
               <button className="adm-btn adm-btn-danger" disabled={saving}
                 onClick={() => deleteProject(deleteTarget.slug)}>
-                {saving ? 'Deleting\u2026' : 'Delete'}
+                {saving ? 'Deleting…' : 'Delete'}
               </button>
             </div>
           </div>
@@ -395,7 +412,7 @@ const AdminDashboard = () => {
         <div className="adm-header-left">
           {view === 'editor' && (
             <button className="adm-btn adm-btn-ghost" onClick={closeEditor}>
-              \u2190 Back
+              ← Back
             </button>
           )}
           <h1 className="adm-logo">Portfolio Admin</h1>
@@ -427,21 +444,21 @@ const AdminDashboard = () => {
           <input
             className="adm-search"
             type="text"
-            placeholder="Search projects\u2026"
+            placeholder="Search levels…"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
           <button className="adm-btn adm-btn-primary"
             onClick={() => openEditor()}>
-            + New Project
+            + New Level
           </button>
         </div>
 
         {loading ? (
-          <p className="adm-status">Loading projects\u2026</p>
+          <p className="adm-status">Loading levels…</p>
         ) : filteredProjects.length === 0 ? (
           <p className="adm-status">
-            {searchQuery ? 'No projects match your search.' : 'No projects yet.'}
+            {searchQuery ? 'No levels match your search.' : 'No levels yet.'}
           </p>
         ) : (
           <div className="adm-project-grid">
@@ -462,7 +479,7 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 <div className="adm-card-actions">
-                  <button className="adm-btn adm-btn-sm"
+                  <button className="adm-btn adm-btn-sm adm-btn-ghost"
                     onClick={() => openEditor(project)}>Edit</button>
                   <button className="adm-btn adm-btn-sm adm-btn-danger"
                     onClick={() => setDeleteTarget(project)}>Delete</button>
@@ -473,7 +490,7 @@ const AdminDashboard = () => {
         )}
 
         <div className="adm-stats">
-          {projects.length} projects &middot; {allCategories.length} categories
+          {projects.length} levels &middot; {allCategories.length} categories
         </div>
       </>
     )
@@ -486,13 +503,13 @@ const AdminDashboard = () => {
     return (
       <div className="adm-editor">
         <div className="adm-editor-header">
-          <h2>{editSlug ? `Edit: ${form.title || editSlug}` : 'New Project'}</h2>
+          <h2>{editSlug ? `Edit: ${form.title || editSlug}` : 'New Level'}</h2>
           <div className="adm-editor-actions">
             <button className="adm-btn adm-btn-ghost"
               onClick={closeEditor} disabled={saving}>Cancel</button>
             <button className="adm-btn adm-btn-primary"
               onClick={saveProject} disabled={saving}>
-              {saving ? 'Saving\u2026' : 'Save Project'}
+              {saving ? 'Saving…' : 'Save Level'}
             </button>
           </div>
         </div>
@@ -511,7 +528,7 @@ const AdminDashboard = () => {
                     ...(editSlug ? {} : { slug: slugify(title) }),
                   }))
                 }}
-                placeholder="Project title"
+                placeholder="Level title"
               />
             </div>
             <div className="adm-field adm-field-slug">
@@ -520,11 +537,11 @@ const AdminDashboard = () => {
                 onChange={e => setForm(prev => ({
                   ...prev, slug: slugify(e.target.value)
                 }))}
-                placeholder="project-slug"
+                placeholder="level-slug"
               />
             </div>
             <div className="adm-field adm-field-date">
-              <label>Date</label>
+              <label>Release Date</label>
               <input type="date" value={form.date}
                 onChange={e => setForm(prev => ({
                   ...prev, date: e.target.value
@@ -573,7 +590,7 @@ const AdminDashboard = () => {
                 }
                 if (e.key === 'Escape') setShowCatDropdown(false)
               }}
-              placeholder="Add category\u2026"
+              placeholder="Add category…"
             />
             {showCatDropdown && filteredCatSuggestions.length > 0 && (
               <div className="adm-cat-dropdown">
@@ -603,12 +620,13 @@ const AdminDashboard = () => {
             {imageList.map((item, index) => (
               <div
                 key={item.id}
-                className={`adm-img-card${index === 0 ? ' adm-img-main' : ''}`}
+                className={`adm-img-card${index === 0 ? ' adm-img-main' : ''}${dragOverIndex === index && dragItem.current !== index ? ' adm-img-drag-over' : ''}`}
                 draggable
-                onDragStart={() => handleDragStart(index)}
-                onDragEnter={() => handleDragEnter(index)}
+                onDragStart={e => handleDragStart(e, index)}
+                onDragEnter={e => handleDragEnter(e, index)}
+                onDragOver={handleDragOver}
+                onDrop={e => handleDrop(e, index)}
                 onDragEnd={handleDragEnd}
-                onDragOver={e => e.preventDefault()}
               >
                 <img src={item.preview} alt="" />
                 <div className="adm-img-overlay">

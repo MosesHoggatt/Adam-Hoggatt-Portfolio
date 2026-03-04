@@ -70,10 +70,12 @@
   font-weight: 600;
   padding: 0.45rem 1rem;
   border-radius: 4px;
-  border: 1px solid transparent;
+  border: 1px solid #444;
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
+  background: #2a2a2a;
+  color: #ccc;
 }
 .adm-btn:disabled {
   opacity: 0.5;
@@ -323,7 +325,7 @@
 }
 .adm-hint {
   font-size: 0.72rem;
-  color: #555;
+  color: #616161;
   margin: 0.5rem 0 0;
 }
 
@@ -421,6 +423,11 @@
   transition: border-color 0.15s;
 }
 .adm-img-card:active { cursor: grabbing; }
+.adm-img-card.adm-img-drag-over {
+  border-color: #f26501;
+  outline: 2px dashed #f26501;
+  outline-offset: 2px;
+}
 .adm-img-card.adm-img-main {
   border-color: #f26501;
 }
