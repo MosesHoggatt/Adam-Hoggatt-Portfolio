@@ -18,7 +18,7 @@
   position: absolute;
   inset: 0;
   background-image: var(--hero-bg);
-  background-size: cover;
+  background-size: min(1400px, 100%) auto;
   background-position: center center;
   background-repeat: no-repeat;
   mask-image: linear-gradient(to right, transparent 0%, transparent 25%, black 65%, black 100%);
@@ -40,43 +40,15 @@
   padding-left: 0;
 }
 
-.hero-shot-wrap {
-  position: relative;
-  flex-shrink: 0;
+.hero-shot {
   width: 192px;
   height: 192px;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.hero-shot {
-  width: 100%;
-  height: 100%;
+  aspect-ratio: 1 / 1;
   object-fit: cover;
   object-position: center top;
   border-radius: 4px;
-  display: block;
+  flex-shrink: 0;
 }
-
-.hero-shot-bio-label {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 0.3rem 0;
-  background: rgba(0, 0, 0, 0.55);
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-align: center;
-  backdrop-filter: blur(2px);
-  opacity: 0;
-  transition: opacity 0.18s;
-  pointer-events: none;
-}
-
 .hero-shot-clickable {
   cursor: pointer;
   transition: box-shadow 0.2s, opacity 0.2s;
@@ -84,9 +56,6 @@
 .hero-shot-clickable:hover {
   box-shadow: 0 0 0 3px #f26501;
   opacity: 0.9;
-}
-.hero-shot-clickable:hover .hero-shot-bio-label {
-  opacity: 1;
 }
 
 .hero-text {
@@ -353,14 +322,13 @@
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .hero-title { font-size: 1.6rem; }
-  .hero-shot-wrap { width: 160px; height: 160px; }
+  .hero-shot { width: 160px; height: 160px; }
 }
 
 @media (max-width: 600px) {
   /* Hero — stack vertically, centered */
   .hero::before {
-    background-position: center top;
-    mask-image: linear-gradient(to bottom, transparent 0%, black 35%, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 40%, black 100%);
   }
   .hero-inner {
     flex-direction: column;
@@ -369,8 +337,7 @@
     gap: 0.8rem;
     padding: 1.2rem 1rem;
   }
-  .hero-shot-wrap { width: 120px; height: 120px; }
-  .hero-shot-bio-label { opacity: 1; background: rgba(0,0,0,0.5); }
+  .hero-shot { width: 120px; height: 120px; }
   .hero-title { font-size: 1.3rem; }
   .hero-subtitle { font-size: 0.8rem; }
   .hero-role { font-size: 0.72rem; }
@@ -426,7 +393,7 @@
 }
 
 @media (max-width: 380px) {
-  .hero-shot-wrap { width: 100px; height: 100px; }
+  .hero-shot { width: 100px; height: 100px; }
   .hero-title { font-size: 1.15rem; }
   .filter-bar { padding: 0.6rem 0.5rem; }
 }

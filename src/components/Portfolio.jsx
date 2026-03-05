@@ -155,14 +155,13 @@ const Portfolio = () => {
       <header className="hero" style={{ '--hero-bg': `url(${heroBannerSrc})` }}>
         <div className="hero-overlay">
           <div className="hero-inner">
-            <div className="hero-shot-wrap hero-shot-clickable" onClick={() => setShowBioModal(true)} title="View bio">
-              <img
-                src={heroPhotoSrc}
-                alt="Adam Hoggatt"
-                className="hero-shot"
-              />
-              <span className="hero-shot-bio-label">Bio</span>
-            </div>
+            <img
+              src={heroPhotoSrc}
+              alt="Adam Hoggatt"
+              className="hero-shot hero-shot-clickable"
+              onClick={() => setShowBioModal(true)}
+              title="View bio"
+            />
             <div className="hero-text">
               <h1 className="hero-title">Adam Hoggatt</h1>
               <p className="hero-subtitle">Level Design Portfolio</p>
