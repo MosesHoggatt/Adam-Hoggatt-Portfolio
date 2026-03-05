@@ -92,7 +92,7 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
                   {images.map((url, i) => (
                     <button
                       key={i}
-                      className={`lb-thumb${i === activeIndex ? ' lb-thumb-active' : ''}`}
+                      className={`lb-thumb${!showingMinimap && i === activeIndex ? ' lb-thumb-active' : ''}`}
                       onClick={() => { setShowingMinimap(false); setActiveIndex(i) }}
                     >
                       <img src={url} alt={`View ${i + 1}`} />
@@ -113,10 +113,6 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
               ))}
             </div>
 
-            {project.description && (
-              <p className="lb-desc">{project.description}</p>
-            )}
-
             {minimapUrl && (
               <div className="lb-minimap">
                 <p className="lb-minimap-label">Minimap</p>
@@ -128,6 +124,10 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
                   <img src={minimapUrl} alt="Minimap" />
                 </button>
               </div>
+            )}
+
+            {project.description && (
+              <p className="lb-desc">{project.description}</p>
             )}
           </aside>
         </div>{/* end lb-main */}
