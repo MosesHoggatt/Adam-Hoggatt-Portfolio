@@ -21,6 +21,7 @@ const Portfolio = () => {
   const [error, setError] = useState(null)
   const [lightboxIndex, setLightboxIndex] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState('date-desc')
 
   useEffect(() => {
     fetchProjects()
@@ -98,6 +99,14 @@ const Portfolio = () => {
         p.categories.some(c => c.toLowerCase().includes(q))
       )
     })
+    .slice()
+    .sort((a, b) => {
+      if (sortOrder === 'date-desc') return new Date(b.date) - new Date(a.date)
+      if (sortOrder === 'date-asc')  return new Date(a.date) - new Date(b.date)
+      if (sortOrder === 'name-asc')  return a.title.localeCompare(b.title)
+      if (sortOrder === 'name-desc') return b.title.localeCompare(a.title)
+      return 0
+    })
 
   return (
     <div className="portfolio">
@@ -142,16 +151,29 @@ const Portfolio = () => {
       )}
       {/* ── Search bar ── */}
       <div className="search-bar">
-        <input
-          className="search-input"
-          type="text"
-          placeholder="Search levels…"
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-        />
-        {searchQuery && (
-          <button className="search-clear" onClick={() => setSearchQuery('')} aria-label="Clear search">×</button>
-        )}
+        <select
+          className="sort-select"
+          value={sortOrder}
+          onChange={e => setSortOrder(e.target.value)}
+          aria-label="Sort order"
+        >
+          <option value="date-desc">Most Recent</option>
+          <option value="date-asc">Least Recent</option>
+          <option value="name-asc">Name (A → Z)</option>
+          <option value="name-desc">Name (Z → A)</option>
+        </select>
+        <div className="search-input-wrap">
+          <input
+            className="search-input"
+            type="text"
+            placeholder="Search levels…"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button className="search-clear" onClick={() => setSearchQuery('')} aria-label="Clear search">×</button>
+          )}
+        </div>
       </div>
       {/* ── Grid ── */}
       <main className="projects-grid">
