@@ -93,7 +93,7 @@ const Portfolio = () => {
   return (
     <div className="portfolio">
       {/* ── Hero ── */}
-      <header className="hero" style={{ backgroundImage: `url(${heroBanner})` }}>
+      <header className="hero" style={{ '--hero-banner': `url(${heroBanner})` }}>
         <div className="hero-overlay">
           <div className="hero-inner">
             <img src={heroShot} alt="Adam Hoggatt" className="hero-shot" />

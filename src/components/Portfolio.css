@@ -9,19 +9,26 @@
 /* ── Hero ─────────────────────────────────────────────────────── */
 .hero {
   background-color: #1a1a1a;
-  background-size: min(1400px, 100%) auto;
-  background-position: center center;
-  background-repeat: no-repeat;
+  position: relative;
   border-bottom: 3px solid #f26501;
 }
 
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--hero-banner);
+  background-size: min(1400px, 100%) auto;
+  background-position: center center;
+  background-repeat: no-repeat;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 55%, black 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 55%, black 100%);
+  z-index: 0;
+}
+
 .hero-overlay {
-  background: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 0.82) 0%,
-    rgba(0, 0, 0, 0.5)  45%,
-    rgba(0, 0, 0, 0)    100%
-  );
+  position: relative;
+  z-index: 1;
 }
 
 .hero-inner {
