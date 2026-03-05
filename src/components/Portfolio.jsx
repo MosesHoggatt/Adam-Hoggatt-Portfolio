@@ -130,11 +130,7 @@ const Portfolio = () => {
                   if (isAll) {
                     setActiveFilters(new Set())
                   } else {
-                    setActiveFilters(prev => {
-                      const next = new Set(prev)
-                      next.has(cat) ? next.delete(cat) : next.add(cat)
-                      return next
-                    })
+                    setActiveFilters(prev => new Set(prev.has(cat) ? [] : [cat]))
                   }
                 }}
               >
