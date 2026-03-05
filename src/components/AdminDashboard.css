@@ -744,6 +744,51 @@
 }
 .adm-profile-bio:focus { border-color: #f26501; }
 
+/* ── Banner section ────────────────────────────────────────────── */
+.adm-banner-body { display: flex; flex-direction: column; }
+.adm-banner-preview-wrap {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid #2a2a2a;
+  background: #111;
+  transition: border-color 0.15s;
+}
+.adm-banner-preview-wrap:hover { border-color: #f26501; }
+.adm-banner-preview-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.adm-banner-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  color: #555;
+}
+.adm-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.adm-banner-preview-wrap:hover .adm-banner-overlay { opacity: 1; }
+
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 700px) {
   .adm-main { padding: 1rem; }

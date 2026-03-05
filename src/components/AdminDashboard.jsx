@@ -25,10 +25,12 @@ const AdminDashboard = () => {
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
   /* ── Profile state ───────────────────────────────────────── */
-  const [profile, setProfile] = useState({ bio: '', photoPath: '' })
+  const [profile, setProfile] = useState({ bio: '', photoPath: '', bannerPath: '' })
   const [profileSaving, setProfileSaving] = useState(false)
   const [profilePhotoFile, setProfilePhotoFile] = useState(null)
   const [profilePhotoPreview, setProfilePhotoPreview] = useState(null)
+  const [bannerFile, setBannerFile] = useState(null)
+  const [bannerPreview, setBannerPreview] = useState(null)
   /* ── View state ────────────────────────────────────────────── */
   const [view, setView] = useState('list') // 'list' | 'editor'
   const [searchQuery, setSearchQuery] = useState('')
@@ -54,6 +56,7 @@ const AdminDashboard = () => {
   /* ── Refs ──────────────────────────────────────────────────── */
   const fileInputRef = useRef(null)
   const profilePhotoInputRef = useRef(null)
+  const bannerInputRef = useRef(null)
   const dragItem = useRef(null)
   const dragOverItem = useRef(null)
   const toastTimer = useRef(null)
@@ -112,6 +115,7 @@ const AdminDashboard = () => {
         const data = await res.json()
         setProfile(data)
         if (data.photoPath) setProfilePhotoPreview(s3Url(data.photoPath))
+        if (data.bannerPath) setBannerPreview(s3Url(data.bannerPath))
       }
     } catch {}
   }, [])
@@ -131,7 +135,17 @@ const AdminDashboard = () => {
           options: { contentType: profilePhotoFile.type },
         }).result
       }
-      const updated = { ...profile, photoPath }
+      let bannerPath = profile.bannerPath
+      if (bannerFile) {
+        const ext = bannerFile.name.split('.').pop().toLowerCase()
+        bannerPath = `profile/banner.${ext}`
+        await uploadData({
+          path: bannerPath,
+          data: bannerFile,
+          options: { contentType: bannerFile.type },
+        }).result
+      }
+      const updated = { ...profile, photoPath, bannerPath }
       await uploadData({
         path: 'profile/profile.json',
         data: JSON.stringify(updated, null, 2),
@@ -142,6 +156,7 @@ const AdminDashboard = () => {
       }).result
       setProfile(updated)
       setProfilePhotoFile(null)
+      setBannerFile(null)
       showToast('Profile saved')
     } catch (err) {
       showToast(`Failed to save profile: ${err.message}`, 'error')
@@ -718,6 +733,39 @@ const AdminDashboard = () => {
                 {profileSaving ? 'Saving…' : 'Save Profile'}
               </button>
             </div>
+          </div>
+        </section>
+
+        {/* ── Banner section ── */}
+        <section className="adm-section">
+          <h3>Hero Banner</h3>
+          <div className="adm-banner-body">
+            <div
+              className="adm-banner-preview-wrap"
+              onClick={() => bannerInputRef.current?.click()}
+              title="Click to change banner"
+            >
+              {bannerPreview
+                ? <img src={bannerPreview} alt="Banner" />
+                : <div className="adm-banner-empty">No Banner — click to upload</div>}
+              <div className="adm-banner-overlay">Change Banner</div>
+            </div>
+            <input
+              ref={bannerInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={e => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                setBannerFile(file)
+                setBannerPreview(URL.createObjectURL(file))
+                e.target.value = ''
+              }}
+            />
+            <p className="adm-hint" style={{ marginTop: '0.6rem' }}>
+              Recommended: wide landscape image (e.g. 1400&times;400). Changes are saved with the Profile above.
+            </p>
           </div>
         </section>
 

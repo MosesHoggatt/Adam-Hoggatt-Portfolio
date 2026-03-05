@@ -118,12 +118,13 @@ const Portfolio = () => {
       return 0
     })
 
+  const heroBannerSrc = profile?.bannerPath ? s3Url(profile.bannerPath) : heroBanner
   const heroPhotoSrc = profile?.photoPath ? s3Url(profile.photoPath) : heroShot
 
   return (
     <div className="portfolio">
       {/* ── Hero ── */}
-      <header className="hero" style={{ '--hero-bg': `url(${heroBanner})` }}>
+      <header className="hero" style={{ '--hero-bg': `url(${heroBannerSrc})` }}>
         <div className="hero-overlay">
           <div className="hero-inner">
             <img
