@@ -118,6 +118,8 @@ const Portfolio = () => {
       return 0
     })
 
+  const heroPhotoSrc = profile?.photoPath ? s3Url(profile.photoPath) : heroShot
+
   return (
     <div className="portfolio">
       {/* ── Hero ── */}
