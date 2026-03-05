@@ -16,7 +16,7 @@ const shortName = (str) => str.replace('Call of Duty: ', '')
 const Portfolio = () => {
   const [projects, setProjects] = useState([])
   const [allCategories, setAllCategories] = useState([])
-  const [activeFilter, setActiveFilter] = useState('All')
+  const [activeFilters, setActiveFilters] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lightboxIndex, setLightboxIndex] = useState(null)
@@ -88,7 +88,7 @@ const Portfolio = () => {
   }
 
   const filteredProjects = projects
-    .filter(p => activeFilter === 'All' || p.categories.includes(activeFilter))
+    .filter(p => activeFilters.size === 0 || p.categories.some(c => activeFilters.has(c)))
     .filter(p => {
       const q = searchQuery.trim().toLowerCase()
       if (!q) return true
@@ -119,15 +119,29 @@ const Portfolio = () => {
       {allCategories.length > 0 && (
         <div className="filter-bar">
           {/* we display ‘All’ followed by categories in reverse order */}
-          {['All', ...[...allCategories].reverse()].map(cat => (
-            <button
-              key={cat}
-              className={`filter-btn${activeFilter === cat ? ' active' : ''}`}
-              onClick={() => setActiveFilter(cat)}
-            >
-              {cat === 'All' ? 'All' : shortName(cat)}
-            </button>
-          ))}
+          {['All', ...[...allCategories].reverse()].map(cat => {
+            const isAll = cat === 'All'
+            const isActive = isAll ? activeFilters.size === 0 : activeFilters.has(cat)
+            return (
+              <button
+                key={cat}
+                className={`filter-btn${isActive ? ' active' : ''}`}
+                onClick={() => {
+                  if (isAll) {
+                    setActiveFilters(new Set())
+                  } else {
+                    setActiveFilters(prev => {
+                      const next = new Set(prev)
+                      next.has(cat) ? next.delete(cat) : next.add(cat)
+                      return next
+                    })
+                  }
+                }}
+              >
+                {isAll ? 'All' : shortName(cat)}
+              </button>
+            )
+          })}
         </div>
       )}
       {/* ── Search bar ── */}
