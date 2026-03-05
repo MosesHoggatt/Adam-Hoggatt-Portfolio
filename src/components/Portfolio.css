@@ -21,8 +21,7 @@
   background-size: min(1400px, 100%) auto;
   background-position: center center;
   background-repeat: no-repeat;
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 30%, black 65%, black 100%);
-  mask-image: linear-gradient(to right, transparent 0%, transparent 30%, black 65%, black 100%);
+  mask-image: linear-gradient(to right, transparent 0%, transparent 25%, black 65%, black 100%);
   z-index: 0;
 }
 
@@ -38,6 +37,7 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 1.2rem 2rem;
+  padding-left: 0;
 }
 
 .hero-shot {
@@ -63,6 +63,7 @@
   color: #fff;
   margin: 0;
   line-height: 1.1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
 .hero-subtitle {
@@ -72,6 +73,7 @@
   text-transform: uppercase;
   color: #f26501;
   margin: 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
 .hero-role {
@@ -79,6 +81,7 @@
   color: #8c8c8c;
   letter-spacing: 0.03em;
   margin: 0;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
 
