@@ -314,17 +314,40 @@
 }
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 700px) {
+  .lb-panel {
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+  }
   .lb-main { flex-direction: column; }
+
+  .lb-image-frame { padding: 0; }
+  .lb-image-area {
+    max-height: 40vh;
+    padding: 0 2.4rem;
+  }
 
   .lb-sidebar {
     width: 100%;
-    flex: 0 0 auto;
+    flex: 1 1 auto;
     border-left: none;
     border-top: 1px solid #2a2a2a;
-    max-height: 35vh;
+    max-height: none;
+    padding: 1rem;
   }
 
-  .lb-image-area { max-height: 45vh; }
-  .lb-image-frame { padding: 0.5rem 2.5rem; }
-  .lb-thumb { width: 72px; flex-basis: 72px; }
+  .lb-title { font-size: 1.05rem; }
+  .lb-desc { font-size: 0.8rem; }
+
+  .lb-thumb { width: 64px; flex-basis: 64px; }
+  .lb-thumbs { max-height: 80px; padding: 0.4rem; }
+
+  .lb-footer { padding: 0.5rem 0.6rem; }
+  .lb-footer-title { font-size: 0.78rem; }
+  .lb-footer-nav { font-size: 0.75rem; padding: 0.35rem 0.7rem; }
+
+  .lb-nav { font-size: 1.5rem; width: 2rem; height: 2rem; }
+  .lb-prev { left: 0.2rem; }
+  .lb-next { right: 0.2rem; }
 }

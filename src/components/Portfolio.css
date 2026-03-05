@@ -321,18 +321,81 @@
 
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .hero-title { font-size: 1.9rem; }
-  .hero-shot { width: 300px; height: 300px; }
+  .hero-title { font-size: 1.6rem; }
+  .hero-shot { width: 160px; height: 160px; }
 }
 
 @media (max-width: 600px) {
-  .hero-inner { gap: 1rem; padding: 1rem; }
-  .hero-shot { width: 216px; height: 216px; }
-  .hero-title { font-size: 1.4rem; }
-  .hero-subtitle { font-size: 0.85rem; }
-  .filter-bar { padding: 1rem; gap: 0.4rem; }
-  .filter-btn { font-size: 0.72rem; padding: 0.35rem 0.7rem; }
-  .projects-grid { padding: 0 0 3rem; gap: 1rem; }
+  /* Hero — stack vertically, centered */
+  .hero::before {
+    mask-image: linear-gradient(to bottom, transparent 0%, black 40%, black 100%);
+  }
+  .hero-inner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.8rem;
+    padding: 1.2rem 1rem;
+  }
+  .hero-shot { width: 120px; height: 120px; }
+  .hero-title { font-size: 1.3rem; }
+  .hero-subtitle { font-size: 0.8rem; }
+  .hero-role { font-size: 0.72rem; }
+
+  /* Filter bar — horizontal scroll instead of wrap */
+  .filter-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+    padding: 0.75rem 1rem;
+    gap: 0.4rem;
+  }
+  .filter-btn {
+    font-size: 0.72rem;
+    padding: 0.35rem 0.7rem;
+    flex-shrink: 0;
+  }
+
+  /* Search bar — stack sort above search */
+  .search-bar {
+    flex-direction: column;
+    margin: 1rem auto 0;
+    padding: 0 0.75rem;
+  }
+  .sort-select {
+    border-right: 1px solid #2a2a2a;
+    border-bottom: none;
+    font-size: 0.82rem;
+    padding: 0.55rem 0.8rem;
+    padding-right: 2rem;
+  }
+  .search-input {
+    font-size: 0.82rem;
+    padding: 0.55rem 2.2rem 0.55rem 0.8rem;
+    border-bottom: 1px solid #2a2a2a;
+  }
+
+  /* Grid — single column with padding */
+  .projects-grid {
+    padding: 0 0.75rem 3rem;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    grid-template-columns: 1fr;
+  }
+
+  /* Cards */
+  .card-body { padding: 0.8rem 1rem 1rem; }
+  .card-title { font-size: 1.05rem; }
+
+  /* Footer */
+  .site-footer { padding: 1.5rem 1rem; font-size: 0.78rem; }
+}
+
+@media (max-width: 380px) {
+  .hero-shot { width: 100px; height: 100px; }
+  .hero-title { font-size: 1.15rem; }
+  .filter-bar { padding: 0.6rem 0.5rem; }
 }
 
 /* ── Bio Modal ──────────────────────────────────────────────────── */
@@ -426,7 +489,21 @@
   color: #555;
   font-style: italic;
 }
+.bio-link {
+  color: #f26501;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.bio-link:hover {
+  color: #ff8c3a;
+}
 @media (max-width: 600px) {
-  .bio-modal { flex-direction: column; padding: 1.5rem; gap: 1.2rem; }
-  .bio-modal-photo { width: 100%; height: auto; aspect-ratio: 1 / 1; }
+  .bio-modal { flex-direction: column; padding: 1.2rem; gap: 1rem; }
+  .bio-modal-photo { width: 100%; max-width: 200px; height: auto; aspect-ratio: 1 / 1; align-self: center; }
+  .bio-modal-name { font-size: 1.2rem; text-align: center; }
+  .bio-modal-role { text-align: center; font-size: 0.75rem; }
+  .bio-modal-bio { font-size: 0.85rem; line-height: 1.65; }
+  .bio-modal-backdrop { padding: 0.75rem; }
 }

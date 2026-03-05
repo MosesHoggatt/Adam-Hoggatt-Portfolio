@@ -725,6 +725,7 @@ const AdminDashboard = () => {
                 onChange={e => setProfile(prev => ({ ...prev, bio: e.target.value }))}
                 placeholder="Write a short bio about Adam Hoggatt…"
               />
+              <p className="adm-profile-hint">Tip: Use <code>[link text](https://url)</code> to create hyperlinks.</p>
               <button
                 className="adm-btn adm-btn-primary"
                 onClick={saveProfile}

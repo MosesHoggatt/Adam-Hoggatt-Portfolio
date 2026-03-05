@@ -13,6 +13,26 @@ const s3Url = (path) => `${S3_BASE}/${path}`
 
 const shortName = (str) => str.replace('Call of Duty: ', '')
 
+/* Parse markdown-style links [text](url) in a string and return React elements */
+const parseBioLinks = (text) => {
+  if (!text) return null
+  const parts = []
+  const re = /\[([^\]]+)\]\(([^)]+)\)/g
+  let last = 0
+  let match
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index))
+    parts.push(
+      <a key={match.index} href={match[2]} target="_blank" rel="noopener noreferrer" className="bio-link">
+        {match[1]}
+      </a>
+    )
+    last = re.lastIndex
+  }
+  if (last < text.length) parts.push(text.slice(last))
+  return parts
+}
+
 const Portfolio = () => {
   const [projects, setProjects] = useState([])
   const [allCategories, setAllCategories] = useState([])
@@ -24,6 +44,14 @@ const Portfolio = () => {
   const [sortOrder, setSortOrder] = useState('date-desc')
   const [profile, setProfile] = useState(null)
   const [showBioModal, setShowBioModal] = useState(false)
+
+  /* Lock body scroll while bio modal is open */
+  useEffect(() => {
+    if (showBioModal) {
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = '' }
+    }
+  }, [showBioModal])
 
   useEffect(() => {
     fetchProjects()
@@ -252,7 +280,7 @@ const Portfolio = () => {
               <h2 className="bio-modal-name">Adam Hoggatt</h2>
               <p className="bio-modal-role">Expert Level Designer · Treyarch · Since 2008</p>
               {profile?.bio
-                ? <p className="bio-modal-bio">{profile.bio}</p>
+                ? <p className="bio-modal-bio">{parseBioLinks(profile.bio)}</p>
                 : <p className="bio-modal-bio bio-modal-empty">Bio coming soon.</p>}
             </div>
           </div>

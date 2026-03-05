@@ -743,6 +743,18 @@
   transition: border-color 0.15s;
 }
 .adm-profile-bio:focus { border-color: #f26501; }
+.adm-profile-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  color: #888;
+}
+.adm-profile-hint code {
+  background: #1e1e1e;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.72rem;
+}
 
 /* ── Banner section ────────────────────────────────────────────── */
 .adm-banner-body { display: flex; flex-direction: column; }
