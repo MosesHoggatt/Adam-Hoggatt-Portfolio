@@ -20,6 +20,7 @@ const Portfolio = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lightboxIndex, setLightboxIndex] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     fetchProjects()
@@ -86,9 +87,17 @@ const Portfolio = () => {
 
   }
 
-  const filteredProjects = activeFilter === 'All'
-    ? projects
-    : projects.filter(p => p.categories.includes(activeFilter))
+  const filteredProjects = projects
+    .filter(p => activeFilter === 'All' || p.categories.includes(activeFilter))
+    .filter(p => {
+      const q = searchQuery.trim().toLowerCase()
+      if (!q) return true
+      return (
+        p.title.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.categories.some(c => c.toLowerCase().includes(q))
+      )
+    })
 
   return (
     <div className="portfolio">
@@ -121,7 +130,19 @@ const Portfolio = () => {
           ))}
         </div>
       )}
-
+      {/* ── Search bar ── */}
+      <div className="search-bar">
+        <input
+          className="search-input"
+          type="text"
+          placeholder="Search levels…"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+        />
+        {searchQuery && (
+          <button className="search-clear" onClick={() => setSearchQuery('')} aria-label="Clear search">×</button>
+        )}
+      </div>
       {/* ── Grid ── */}
       <main className="projects-grid">
         {loading && <p className="status-msg">Loading projects…</p>}
