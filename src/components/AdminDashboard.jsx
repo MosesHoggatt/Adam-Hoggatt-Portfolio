@@ -587,41 +587,6 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        {loading ? (
-          <p className="adm-status">Loading levels…</p>
-        ) : filteredProjects.length === 0 ? (
-          <p className="adm-status">
-            {searchQuery ? 'No levels match your search.' : 'No levels yet.'}
-          </p>
-        ) : (
-          <div className="adm-project-grid">
-            {filteredProjects.map(project => (
-              <div key={project.slug} className="adm-project-card">
-                <div className="adm-card-thumb"
-                  onClick={() => openEditor(project)}>
-                  {project.images?.[0]
-                    ? <img src={s3Url(project.images[0])} alt="" loading="lazy" />
-                    : <div className="adm-card-no-img">No Image</div>}
-                </div>
-                <div className="adm-card-body"
-                  onClick={() => openEditor(project)}>
-                  <h3 className="adm-card-title">{project.title}</h3>
-                  <div className="adm-card-meta">
-                    <span>{project.images?.length || 0} images</span>
-                    <span>{project.categories?.length || 0} categories</span>
-                  </div>
-                </div>
-                <div className="adm-card-actions">
-                  <button className="adm-btn adm-btn-sm adm-btn-ghost"
-                    onClick={() => openEditor(project)}>Edit</button>
-                  <button className="adm-btn adm-btn-sm adm-btn-danger"
-                    onClick={() => setDeleteTarget(project)}>Delete</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
         <div className="adm-cats-panel">
           <div className="adm-cats-header">
             <span className="adm-cats-title">Categories</span>
@@ -668,6 +633,41 @@ const AdminDashboard = () => {
         <div className="adm-stats">
           {projects.length} levels &middot; {allCategories.length} categories
         </div>
+
+        {loading ? (
+          <p className="adm-status">Loading levels…</p>
+        ) : filteredProjects.length === 0 ? (
+          <p className="adm-status">
+            {searchQuery ? 'No levels match your search.' : 'No levels yet.'}
+          </p>
+        ) : (
+          <div className="adm-project-grid">
+            {filteredProjects.map(project => (
+              <div key={project.slug} className="adm-project-card">
+                <div className="adm-card-thumb"
+                  onClick={() => openEditor(project)}>
+                  {project.images?.[0]
+                    ? <img src={s3Url(project.images[0])} alt="" loading="lazy" />
+                    : <div className="adm-card-no-img">No Image</div>}
+                </div>
+                <div className="adm-card-body"
+                  onClick={() => openEditor(project)}>
+                  <h3 className="adm-card-title">{project.title}</h3>
+                  <div className="adm-card-meta">
+                    <span>{project.images?.length || 0} images</span>
+                    <span>{project.categories?.length || 0} categories</span>
+                  </div>
+                </div>
+                <div className="adm-card-actions">
+                  <button className="adm-btn adm-btn-sm adm-btn-ghost"
+                    onClick={() => openEditor(project)}>Edit</button>
+                  <button className="adm-btn adm-btn-sm adm-btn-danger"
+                    onClick={() => setDeleteTarget(project)}>Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </>
     )
   }
