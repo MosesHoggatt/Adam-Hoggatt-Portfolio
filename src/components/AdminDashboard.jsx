@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { uploadData, remove } from 'aws-amplify/storage'
 import { useAuthenticator } from '@aws-amplify/ui-react'
 import awsConfig from '../aws-exports'
@@ -15,6 +16,7 @@ const slugify = (str) =>
    ══════════════════════════════════════════════════════════════════ */
 const AdminDashboard = () => {
   const { signOut, user } = useAuthenticator()
+  const navigate = useNavigate()
 
   /* ── Global state ──────────────────────────────────────────── */
   const [projects, setProjects] = useState([])
@@ -585,6 +587,11 @@ const AdminDashboard = () => {
       {/* Header */}
       <header className="adm-header">
         <div className="adm-header-left">
+          {view === 'list' && (
+            <button className="adm-btn adm-btn-ghost" onClick={() => navigate('/')}>
+              ← Main Page
+            </button>
+          )}
           {view === 'editor' && (
             <button className="adm-btn adm-btn-ghost" onClick={closeEditor}>
               ← Back
