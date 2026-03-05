@@ -120,7 +120,7 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: background 0.2s, color 0.2s, border-color 0.2s;
-  white-space: nowrap;
+  white-space: nowrap; 
 }
 
 .filter-btn:hover {
