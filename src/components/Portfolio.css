@@ -63,7 +63,7 @@
   color: #fff;
   margin: 0;
   line-height: 1.1;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .hero-subtitle {
@@ -73,7 +73,7 @@
   text-transform: uppercase;
   color: #f26501;
   margin: 0;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .hero-role {
@@ -81,7 +81,7 @@
   color: #8c8c8c;
   letter-spacing: 0.03em;
   margin: 0;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 
