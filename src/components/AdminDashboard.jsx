@@ -43,6 +43,7 @@ const AdminDashboard = () => {
   const [showUnsavedModal, setShowUnsavedModal] = useState(false)
   const [newCatInput, setNewCatInput] = useState('')
   const [showNewCatRow, setShowNewCatRow] = useState(false)
+  const [deleteCatTarget, setDeleteCatTarget] = useState(null)
 
   /* ── Refs ──────────────────────────────────────────────────── */
   const fileInputRef = useRef(null)
@@ -456,20 +457,43 @@ const AdminDashboard = () => {
     }
   }
 
-  const removeGlobalCategory = async (cat) => {
-    const updated = allCategories.filter(c => c !== cat)
-    setAllCategories(updated)
+  const removeGlobalCategory = (cat) => {
+    setDeleteCatTarget(cat)
+  }
+
+  const confirmRemoveGlobalCategory = async () => {
+    const cat = deleteCatTarget
+    setDeleteCatTarget(null)
+    // 1. Remove from global list
+    const updatedCats = allCategories.filter(c => c !== cat)
+    setAllCategories(updatedCats)
+    // 2. Strip from every project that uses it
+    const affectedProjects = projects.filter(p => (p.categories || []).includes(cat))
+    const updatedProjects = projects.map(p =>
+      p.categories?.includes(cat)
+        ? { ...p, categories: p.categories.filter(c => c !== cat) }
+        : p
+    )
+    setProjects(updatedProjects)
     try {
+      // Update categories.json
       await uploadData({
         path: 'projects/categories.json',
-        data: JSON.stringify(updated),
-        options: {
-          contentType: 'application/json',
-          metadata: { 'Cache-Control': 'no-cache, max-age=0' },
-        },
+        data: JSON.stringify(updatedCats),
+        options: { contentType: 'application/json', metadata: { 'Cache-Control': 'no-cache, max-age=0' } },
       }).result
+      // Update each affected project JSON
+      for (const p of affectedProjects) {
+        const updatedData = { ...p, categories: p.categories.filter(c => c !== cat) }
+        await uploadData({
+          path: `projects/${p.slug}.json`,
+          data: JSON.stringify(updatedData, null, 4),
+          options: { contentType: 'application/json', metadata: { 'Cache-Control': 'no-cache, max-age=0' } },
+        }).result
+      }
+      showToast(`Category "${cat}" removed${affectedProjects.length ? ` from ${affectedProjects.length} level(s)` : ''}`)
     } catch (err) {
-      showToast('Failed to update categories', 'error')
+      showToast('Failed to remove category', 'error')
     }
   }
 
@@ -514,6 +538,24 @@ const AdminDashboard = () => {
                 onClick={() => setShowUnsavedModal(false)}>Keep Editing</button>
               <button className="adm-btn adm-btn-danger"
                 onClick={confirmDiscard}>Discard Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete category confirm modal */}
+      {deleteCatTarget && (
+        <div className="adm-modal-backdrop" onClick={() => setDeleteCatTarget(null)}>
+          <div className="adm-modal" onClick={e => e.stopPropagation()}>
+            <h3>Delete Category</h3>
+            <p>
+              Remove <strong>{deleteCatTarget}</strong> from the category list and strip it from all levels that use it?
+            </p>
+            <div className="adm-modal-actions">
+              <button className="adm-btn adm-btn-ghost"
+                onClick={() => setDeleteCatTarget(null)}>Cancel</button>
+              <button className="adm-btn adm-btn-danger"
+                onClick={confirmRemoveGlobalCategory}>Delete</button>
             </div>
           </div>
         </div>
