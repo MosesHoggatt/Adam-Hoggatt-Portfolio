@@ -21,8 +21,8 @@
   background-size: min(1400px, 100%) auto;
   background-position: center center;
   background-repeat: no-repeat;
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 55%, black 100%);
-  mask-image: linear-gradient(to right, transparent 0%, black 55%, black 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 30%, black 65%, black 100%);
+  mask-image: linear-gradient(to right, transparent 0%, transparent 30%, black 65%, black 100%);
   z-index: 0;
 }
 
