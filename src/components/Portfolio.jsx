@@ -22,9 +22,12 @@ const Portfolio = () => {
   const [lightboxIndex, setLightboxIndex] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState('date-desc')
+  const [profile, setProfile] = useState(null)
+  const [showBioModal, setShowBioModal] = useState(false)
 
   useEffect(() => {
     fetchProjects()
+    fetchProfile()
   }, [])
 
   const fetchProjects = async () => {
@@ -88,6 +91,13 @@ const Portfolio = () => {
 
   }
 
+  const fetchProfile = async () => {
+    try {
+      const res = await fetch(s3Url('profile/profile.json'), { cache: 'no-cache' })
+      if (res.ok) setProfile(await res.json())
+    } catch {}
+  }
+
   const filteredProjects = projects
     .filter(p => activeFilters.size === 0 || p.categories.some(c => activeFilters.has(c)))
     .filter(p => {
@@ -114,7 +124,13 @@ const Portfolio = () => {
       <header className="hero" style={{ '--hero-bg': `url(${heroBanner})` }}>
         <div className="hero-overlay">
           <div className="hero-inner">
-            <img src={heroShot} alt="Adam Hoggatt" className="hero-shot" />
+            <img
+              src={heroPhotoSrc}
+              alt="Adam Hoggatt"
+              className="hero-shot hero-shot-clickable"
+              onClick={() => setShowBioModal(true)}
+              title="View bio"
+            />
             <div className="hero-text">
               <h1 className="hero-title">Adam Hoggatt</h1>
               <p className="hero-subtitle">Level Design Portfolio</p>
@@ -222,6 +238,22 @@ const Portfolio = () => {
           onNextProject={() => setLightboxIndex(i => Math.min(i + 1, filteredProjects.length - 1))}
           onClose={() => setLightboxIndex(null)}
         />
+      )}
+
+      {showBioModal && (
+        <div className="bio-modal-backdrop" onClick={() => setShowBioModal(false)}>
+          <div className="bio-modal" onClick={e => e.stopPropagation()}>
+            <button className="bio-modal-close" onClick={() => setShowBioModal(false)} aria-label="Close">✕</button>
+            <img src={heroPhotoSrc} alt="Adam Hoggatt" className="bio-modal-photo" />
+            <div className="bio-modal-content">
+              <h2 className="bio-modal-name">Adam Hoggatt</h2>
+              <p className="bio-modal-role">Expert Level Designer · Treyarch · Since 2008</p>
+              {profile?.bio
+                ? <p className="bio-modal-bio">{profile.bio}</p>
+                : <p className="bio-modal-bio bio-modal-empty">Bio coming soon.</p>}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

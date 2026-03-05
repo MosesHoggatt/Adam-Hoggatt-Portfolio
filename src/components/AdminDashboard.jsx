@@ -24,7 +24,11 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState(null)
-
+  /* ── Profile state ───────────────────────────────────────── */
+  const [profile, setProfile] = useState({ bio: '', photoPath: '' })
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profilePhotoFile, setProfilePhotoFile] = useState(null)
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null)
   /* ── View state ────────────────────────────────────────────── */
   const [view, setView] = useState('list') // 'list' | 'editor'
   const [searchQuery, setSearchQuery] = useState('')
@@ -49,6 +53,7 @@ const AdminDashboard = () => {
 
   /* ── Refs ──────────────────────────────────────────────────── */
   const fileInputRef = useRef(null)
+  const profilePhotoInputRef = useRef(null)
   const dragItem = useRef(null)
   const dragOverItem = useRef(null)
   const toastTimer = useRef(null)
@@ -99,6 +104,51 @@ const AdminDashboard = () => {
   }, [showToast])
 
   useEffect(() => { fetchProjects() }, [fetchProjects])
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await fetch(s3Url('profile/profile.json'), { cache: 'no-cache' })
+      if (res.ok) {
+        const data = await res.json()
+        setProfile(data)
+        if (data.photoPath) setProfilePhotoPreview(s3Url(data.photoPath))
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => { fetchProfile() }, [fetchProfile])
+
+  const saveProfile = async () => {
+    setProfileSaving(true)
+    try {
+      let photoPath = profile.photoPath
+      if (profilePhotoFile) {
+        const ext = profilePhotoFile.name.split('.').pop().toLowerCase()
+        photoPath = `profile/photo.${ext}`
+        await uploadData({
+          path: photoPath,
+          data: profilePhotoFile,
+          options: { contentType: profilePhotoFile.type },
+        }).result
+      }
+      const updated = { ...profile, photoPath }
+      await uploadData({
+        path: 'profile/profile.json',
+        data: JSON.stringify(updated, null, 2),
+        options: {
+          contentType: 'application/json',
+          metadata: { 'Cache-Control': 'no-cache, max-age=0' },
+        },
+      }).result
+      setProfile(updated)
+      setProfilePhotoFile(null)
+      showToast('Profile saved')
+    } catch (err) {
+      showToast(`Failed to save profile: ${err.message}`, 'error')
+    } finally {
+      setProfileSaving(false)
+    }
+  }
 
   /* Add noindex meta tag to hide admin from search engines */
   useEffect(() => {
@@ -622,6 +672,55 @@ const AdminDashboard = () => {
   function renderList() {
     return (
       <>
+        {/* ── Profile section ── */}
+        <section className="adm-section adm-profile-section">
+          <h3>Profile</h3>
+          <div className="adm-profile-body">
+            <div className="adm-profile-photo-col">
+              <div
+                className="adm-profile-photo-wrap"
+                onClick={() => profilePhotoInputRef.current?.click()}
+                title="Click to change photo"
+              >
+                {profilePhotoPreview
+                  ? <img src={profilePhotoPreview} alt="Profile" />
+                  : <div className="adm-profile-photo-empty">No Photo</div>}
+                <div className="adm-profile-photo-overlay">Change Photo</div>
+              </div>
+              <input
+                ref={profilePhotoInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={e => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  setProfilePhotoFile(file)
+                  setProfilePhotoPreview(URL.createObjectURL(file))
+                  e.target.value = ''
+                }}
+              />
+            </div>
+            <div className="adm-profile-bio-col">
+              <label className="adm-profile-label">Bio</label>
+              <textarea
+                className="adm-profile-bio"
+                rows={6}
+                value={profile.bio}
+                onChange={e => setProfile(prev => ({ ...prev, bio: e.target.value }))}
+                placeholder="Write a short bio about Adam Hoggatt…"
+              />
+              <button
+                className="adm-btn adm-btn-primary"
+                onClick={saveProfile}
+                disabled={profileSaving}
+              >
+                {profileSaving ? 'Saving…' : 'Save Profile'}
+              </button>
+            </div>
+          </div>
+        </section>
+
         <div className="adm-toolbar">
           <input
             className="adm-search"
