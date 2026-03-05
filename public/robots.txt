@@ -1,4 +1,4 @@
 User-agent: *
 Disallow: /admin
 
-Sitemap: https://www.adamhoggatt.com/sitemap.xml
+Sitemap: https://adam.hoggatt.me/sitemap.xml
