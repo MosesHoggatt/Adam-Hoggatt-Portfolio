@@ -41,6 +41,8 @@ const AdminDashboard = () => {
   const [dragOverIndex, setDragOverIndex] = useState(null)
   const [minimapIndex, setMinimapIndex] = useState(null)
   const [showUnsavedModal, setShowUnsavedModal] = useState(false)
+  const [newCatInput, setNewCatInput] = useState('')
+  const [showNewCatRow, setShowNewCatRow] = useState(false)
 
   /* ── Refs ──────────────────────────────────────────────────── */
   const fileInputRef = useRef(null)
@@ -76,6 +78,14 @@ const AdminDashboard = () => {
         (a.title || '').localeCompare(b.title || ''))
       setProjects(valid)
       const cats = new Set(valid.flatMap(p => p.categories || []))
+      // Merge with global categories.json if it exists
+      try {
+        const catRes = await fetch(s3Url('projects/categories.json'), { cache: 'no-cache' })
+        if (catRes.ok) {
+          const globalCats = await catRes.json()
+          globalCats.forEach(c => cats.add(c))
+        }
+      } catch {}
       setAllCategories([...cats].sort())
     } catch (err) {
       console.error('Error loading projects:', err)
@@ -424,6 +434,45 @@ const AdminDashboard = () => {
     }))
   }
 
+  const addGlobalCategory = async () => {
+    const trimmed = newCatInput.trim()
+    if (!trimmed) return
+    const updated = [...new Set([...allCategories, trimmed])].sort()
+    setAllCategories(updated)
+    setNewCatInput('')
+    setShowNewCatRow(false)
+    try {
+      await uploadData({
+        path: 'projects/categories.json',
+        data: JSON.stringify(updated),
+        options: {
+          contentType: 'application/json',
+          metadata: { 'Cache-Control': 'no-cache, max-age=0' },
+        },
+      }).result
+      showToast(`Category "${trimmed}" added`)
+    } catch (err) {
+      showToast('Failed to save category', 'error')
+    }
+  }
+
+  const removeGlobalCategory = async (cat) => {
+    const updated = allCategories.filter(c => c !== cat)
+    setAllCategories(updated)
+    try {
+      await uploadData({
+        path: 'projects/categories.json',
+        data: JSON.stringify(updated),
+        options: {
+          contentType: 'application/json',
+          metadata: { 'Cache-Control': 'no-cache, max-age=0' },
+        },
+      }).result
+    } catch (err) {
+      showToast('Failed to update categories', 'error')
+    }
+  }
+
   const filteredCatSuggestions = catInput.trim()
     ? allCategories.filter(c =>
         c.toLowerCase().includes(catInput.toLowerCase()) &&
@@ -572,6 +621,49 @@ const AdminDashboard = () => {
             ))}
           </div>
         )}
+
+        <div className="adm-cats-panel">
+          <div className="adm-cats-header">
+            <span className="adm-cats-title">Categories</span>
+            <button
+              className="adm-btn adm-btn-sm adm-btn-ghost"
+              onClick={() => { setShowNewCatRow(r => !r); setNewCatInput('') }}
+              title="Add category"
+            >+</button>
+          </div>
+          {showNewCatRow && (
+            <div className="adm-cats-new-row">
+              <input
+                className="adm-cats-input"
+                type="text"
+                placeholder="New category…"
+                value={newCatInput}
+                autoFocus
+                onChange={e => setNewCatInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') addGlobalCategory()
+                  if (e.key === 'Escape') { setShowNewCatRow(false); setNewCatInput('') }
+                }}
+              />
+              <button className="adm-btn adm-btn-sm adm-btn-primary" onClick={addGlobalCategory}>Add</button>
+            </div>
+          )}
+          <div className="adm-cats-list">
+            {allCategories.length === 0
+              ? <span className="adm-cats-empty">No categories yet</span>
+              : allCategories.map(cat => (
+                <span key={cat} className="adm-cat-chip">
+                  {cat}
+                  <button
+                    className="adm-cat-chip-rm"
+                    onClick={() => removeGlobalCategory(cat)}
+                    title="Remove category"
+                  >×</button>
+                </span>
+              ))
+            }
+          </div>
+        </div>
 
         <div className="adm-stats">
           {projects.length} levels &middot; {allCategories.length} categories
