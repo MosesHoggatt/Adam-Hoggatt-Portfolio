@@ -265,6 +265,8 @@
   overflow: hidden;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
 }
 
 .project-card:hover {
@@ -314,6 +316,7 @@
   display: flex;
   gap: 0.75rem;
   align-items: flex-start;
+  flex: 1;
 }
 
 .card-info {
@@ -375,8 +378,8 @@
 }
 
 .tag-icon {
-  width: 20px;
-  height: 20px;
+  width: 19px;
+  height: 19px;
   object-fit: contain;
   display: block;
   border-radius: 1px;
