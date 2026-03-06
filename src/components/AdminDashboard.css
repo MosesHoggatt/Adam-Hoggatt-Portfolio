@@ -219,9 +219,14 @@
   background: #111;
   border: 1px solid #222;
   transition: border-color 0.15s;
+  cursor: grab;
 }
 .adm-cat-row:hover {
   border-color: #333;
+}
+.adm-cat-row.adm-cat-drag-over {
+  border-color: #f26501;
+  background: #1a1000;
 }
 .adm-cat-row-icon {
   flex-shrink: 0;

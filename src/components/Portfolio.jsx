@@ -42,6 +42,7 @@ const Portfolio = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lightboxIndex, setLightboxIndex] = useState(null)
+  const [lightboxInitialMinimap, setLightboxInitialMinimap] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState('date-desc')
   const [profile, setProfile] = useState(null)
@@ -105,15 +106,9 @@ const Portfolio = () => {
 
       // 4. Build category filter list
       const catSet = new Set(valid.flatMap(p => p.categories))
-      let cats = [...catSet]
-      const warzone = 'Call of Duty: Warzone'
-      if (cats.includes(warzone)) {
-        cats = cats.filter(c => c !== warzone).concat(warzone)
-      }
-      setAllCategories(cats)
       setProjects(valid)
 
-      // 5. Load category metadata (icon + gameName) from S3, falling back to builtins
+      // 5. Load category metadata and order from S3, falling back to builtins
       const meta = {}
       // Seed with builtin defaults first
       Object.assign(meta, BUILTIN_CATEGORY_META)
@@ -121,6 +116,15 @@ const Portfolio = () => {
         const catMetaRes = await fetch(s3Url('projects/categories.json'), { cache: 'no-cache' })
         if (catMetaRes.ok) {
           const globalCats = await catMetaRes.json()
+          // Respect admin-defined order from categories.json
+          const catOrder = globalCats
+            .map(c => (typeof c === 'string' ? c : c?.id))
+            .filter(Boolean)
+          const cats = [
+            ...catOrder.filter(id => catSet.has(id)),
+            ...[...catSet].filter(id => !catOrder.includes(id)),
+          ]
+          setAllCategories(cats)
           globalCats.forEach(c => {
             if (typeof c === 'string') {
               // Old string format — keep builtin icon if one exists
@@ -133,8 +137,12 @@ const Portfolio = () => {
               }
             }
           })
+        } else {
+          setAllCategories([...catSet])
         }
-      } catch {}
+      } catch {
+        setAllCategories([...catSet])
+      }
       setCategoryMeta(meta)
     } catch (err) {
       console.error('Error loading projects from S3:', err)
@@ -201,7 +209,7 @@ const Portfolio = () => {
       {allCategories.length > 0 && (
         <div className="filter-bar">
           {/* we display ‘All’ followed by categories in reverse order */}
-          {['All', ...[...allCategories].reverse()].map(cat => {
+          {['All', ...allCategories].map(cat => {
             const isAll = cat === 'All'
             const isActive = isAll ? activeFilters.size === 0 : activeFilters.has(cat)
             const meta = !isAll ? categoryMeta[cat] : null
@@ -269,10 +277,10 @@ const Portfolio = () => {
           <article
             key={project.slug}
             className="project-card"
-            onClick={() => setLightboxIndex(idx)}
+            onClick={() => { setLightboxInitialMinimap(false); setLightboxIndex(idx) }}
             role="button"
             tabIndex={0}
-            onKeyDown={e => e.key === 'Enter' && setLightboxIndex(idx)}
+            onKeyDown={e => e.key === 'Enter' && (setLightboxInitialMinimap(false), setLightboxIndex(idx))}
           >
             <div className="card-image">
               {project.images.length > 0
@@ -280,21 +288,35 @@ const Portfolio = () => {
                 : <div className="image-placeholder" />}
             </div>
             <div className="card-body">
-              <h2 className="card-title">{project.title}</h2>
-              <div className="card-tags">
-                {project.categories.map(c => {
-                  const meta = categoryMeta[c]
-                  const iconSrc = meta?.icon ? (CATEGORY_ICON_MAP[meta.icon] || s3Url(meta.icon)) : null
-                  const gameName = meta?.gameName || shortName(c)
-                  return (
-                    <span key={c} className="tag" title={gameName}>
-                      {iconSrc
-                        ? <img src={iconSrc} alt={gameName} className="tag-icon" />
-                        : gameName}
-                    </span>
-                  )
-                })}
+              <div className="card-info">
+                <h2 className="card-title">{project.title}</h2>
+                <div className="card-tags">
+                  {project.categories.map(c => {
+                    const meta = categoryMeta[c]
+                    const iconSrc = meta?.icon ? (CATEGORY_ICON_MAP[meta.icon] || s3Url(meta.icon)) : null
+                    const gameName = meta?.gameName || shortName(c)
+                    return (
+                      <span key={c} className="tag" title={gameName}>
+                        {iconSrc
+                          ? <img src={iconSrc} alt={gameName} className="tag-icon" />
+                          : gameName}
+                      </span>
+                    )
+                  })}
+                </div>
               </div>
+              {project.minimap && (
+                <div
+                  className="card-minimap"
+                  onClick={e => { e.stopPropagation(); setLightboxInitialMinimap(true); setLightboxIndex(idx) }}
+                  title="View minimap"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={e => e.key === 'Enter' && (e.stopPropagation(), setLightboxInitialMinimap(true), setLightboxIndex(idx))}
+                >
+                  <img src={s3Url(project.minimap)} alt="Minimap" loading="lazy" />
+                </div>
+              )}
             </div>
           </article>
         ))}
@@ -312,6 +334,7 @@ const Portfolio = () => {
           onPrevProject={() => setLightboxIndex(i => Math.max(i - 1, 0))}
           onNextProject={() => setLightboxIndex(i => Math.min(i + 1, filteredProjects.length - 1))}
           onClose={() => setLightboxIndex(null)}
+          initialShowMinimap={lightboxInitialMinimap}
         />
       )}
 

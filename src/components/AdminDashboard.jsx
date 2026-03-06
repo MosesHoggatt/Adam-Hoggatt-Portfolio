@@ -64,6 +64,7 @@ const AdminDashboard = () => {
   const [editCatIconFile, setEditCatIconFile] = useState(null)
   const [editCatIconPreview, setEditCatIconPreview] = useState(null)
   const [deleteCatTarget, setDeleteCatTarget] = useState(null)
+  const [catDragOverIndex, setCatDragOverIndex] = useState(null)
 
   /* ── Refs ──────────────────────────────────────────────────── */
   const fileInputRef = useRef(null)
@@ -73,6 +74,8 @@ const AdminDashboard = () => {
   const editCatIconInputRef = useRef(null)
   const dragItem = useRef(null)
   const dragOverItem = useRef(null)
+  const catDragItem = useRef(null)
+  const catDragOver = useRef(null)
   const toastTimer = useRef(null)
   const isDirtyRef = useRef(false)
 
@@ -112,13 +115,15 @@ const AdminDashboard = () => {
           ? { id, gameName: builtin.gameName, icon: builtin.icon }
           : { id, gameName: id, icon: null }
       })
-      // Merge with global categories.json (S3 data wins for any set fields)
+      // Merge with global categories.json — preserves S3 order for drag-and-drop
+      const orderedCatIds = []
       try {
         const catRes = await fetch(s3Url('projects/categories.json'), { cache: 'no-cache' })
         if (catRes.ok) {
           const globalCats = await catRes.json()
           globalCats.forEach(c => {
             if (typeof c === 'string') {
+              orderedCatIds.push(c)
               catIdSet.add(c)
               if (!catMetaMap[c]) {
                 const builtin = BUILTIN_CATEGORY_META[c]
@@ -127,6 +132,7 @@ const AdminDashboard = () => {
                   : { id: c, gameName: c, icon: null }
               }
             } else if (c?.id) {
+              orderedCatIds.push(c.id)
               catIdSet.add(c.id)
               const builtin = BUILTIN_CATEGORY_META[c.id]
               catMetaMap[c.id] = {
@@ -138,8 +144,10 @@ const AdminDashboard = () => {
           })
         }
       } catch {}
-      const sortedCats = [...catIdSet].sort().map(id => catMetaMap[id] || { id, gameName: id, icon: null })
-      setAllCategories(sortedCats)
+      // Append any project categories not present in categories.json
+      catIdSet.forEach(id => { if (!orderedCatIds.includes(id)) orderedCatIds.push(id) })
+      const finalCats = orderedCatIds.map(id => catMetaMap[id] || { id, gameName: id, icon: null })
+      setAllCategories(finalCats)
     } catch (err) {
       console.error('Error loading projects:', err)
       showToast('Error loading levels', 'error')
@@ -552,7 +560,7 @@ const AdminDashboard = () => {
     try {
       if (newCatIconFile) {
         const ext = newCatIconFile.name.split('.').pop().toLowerCase()
-        const iconPath = `categories/icons/${slugify(id)}.${ext}`
+        const iconPath = `projects/category-icons/${slugify(id)}.${ext}`
         await uploadData({ path: iconPath, data: newCatIconFile, options: { contentType: newCatIconFile.type } }).result
         iconValue = iconPath
         URL.revokeObjectURL(newCatIconPreview)
@@ -560,7 +568,7 @@ const AdminDashboard = () => {
         setNewCatIconPreview(null)
       }
       const newCat = { id, gameName: newCatForm.gameName.trim() || id, icon: iconValue }
-      const updated = [...allCategories, newCat].sort((a, b) => a.id.localeCompare(b.id))
+      const updated = [...allCategories, newCat]
       setAllCategories(updated)
       setNewCatForm({ id: '', gameName: '', icon: '' })
       setShowNewCatRow(false)
@@ -580,7 +588,7 @@ const AdminDashboard = () => {
     try {
       if (editCatIconFile) {
         const ext = editCatIconFile.name.split('.').pop().toLowerCase()
-        const iconPath = `categories/icons/${slugify(editCatId)}.${ext}`
+        const iconPath = `projects/category-icons/${slugify(editCatId)}.${ext}`
         await uploadData({ path: iconPath, data: editCatIconFile, options: { contentType: editCatIconFile.type } }).result
         iconValue = iconPath
         URL.revokeObjectURL(editCatIconPreview)
@@ -643,6 +651,37 @@ const AdminDashboard = () => {
     } catch (err) {
       showToast('Failed to remove category', 'error')
     }
+  }
+
+  /* ── Category drag-and-drop ───────────────────────────────── */
+  const handleCatDragStart = (i) => { catDragItem.current = i }
+  const handleCatDragEnter = (i) => { catDragOver.current = i; setCatDragOverIndex(i) }
+  const handleCatDrop = async () => {
+    const from = catDragItem.current
+    const to = catDragOver.current
+    catDragItem.current = null
+    catDragOver.current = null
+    setCatDragOverIndex(null)
+    if (from === null || to === null || from === to) return
+    const copy = [...allCategories]
+    const [moved] = copy.splice(from, 1)
+    copy.splice(to, 0, moved)
+    setAllCategories(copy)
+    try {
+      await uploadData({
+        path: 'projects/categories.json',
+        data: JSON.stringify(copy),
+        options: { contentType: 'application/json', metadata: { 'Cache-Control': 'no-cache, max-age=0' } },
+      }).result
+      showToast('Category order saved')
+    } catch {
+      showToast('Failed to save category order', 'error')
+    }
+  }
+  const handleCatDragEnd = () => {
+    catDragItem.current = null
+    catDragOver.current = null
+    setCatDragOverIndex(null)
   }
 
   const filteredCatSuggestions = catInput.trim()
@@ -957,8 +996,16 @@ const AdminDashboard = () => {
           <div className="adm-cats-list">
             {allCategories.length === 0
               ? <span className="adm-cats-empty">No categories yet</span>
-              : allCategories.map(cat => (
-                <div key={cat.id} className="adm-cat-row">
+              : allCategories.map((cat, idx) => (
+                <div
+                  key={cat.id}
+                  className={`adm-cat-row${catDragOverIndex === idx ? ' adm-cat-drag-over' : ''}`}
+                  draggable
+                  onDragStart={() => handleCatDragStart(idx)}
+                  onDragEnter={() => handleCatDragEnter(idx)}
+                  onDragEnd={handleCatDrop}
+                  onDragOver={e => e.preventDefault()}
+                >
                   {editCatId === cat.id ? (
                     <div className="adm-cat-edit-form">
                       <input

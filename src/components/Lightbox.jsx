@@ -5,15 +5,22 @@ import './Lightbox.css'
 const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`
 const s3Url = (path) => `${S3_BASE}/${path}`
 
-const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextProject, onClose }) => {
+const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextProject, onClose, initialShowMinimap = false }) => {
   const images = (project?.images || []).map(s3Url)
   const minimapUrl = project?.minimap ? s3Url(project.minimap) : null
   const [activeIndex, setActiveIndex] = useState(0)
-  const [showingMinimap, setShowingMinimap] = useState(false)
+  const [showingMinimap, setShowingMinimap] = useState(initialShowMinimap)
   const thumbsRef = useRef(null)
+  const prevProjectRef = useRef(project)
 
-  /* Reset index and minimap view when project changes */
-  useEffect(() => { setActiveIndex(0); setShowingMinimap(false) }, [project])
+  /* Reset index on project navigation (prev/next), but NOT on initial mount */
+  useEffect(() => {
+    if (prevProjectRef.current !== project) {
+      prevProjectRef.current = project
+      setActiveIndex(0)
+      setShowingMinimap(false)
+    }
+  }, [project])
 
   /* Lock body scroll while open */
   useEffect(() => {
