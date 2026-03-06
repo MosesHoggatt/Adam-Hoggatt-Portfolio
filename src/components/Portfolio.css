@@ -156,7 +156,7 @@
 .filter-btn.active {
   background-color: rgba(242, 101, 1, 0.12);
   border-color: #f26501;
-  color: #111;
+  color: #fff;
   box-shadow: 0 0 0 2px #f26501;
 }
 
@@ -310,7 +310,8 @@
 }
 
 .card-body {
-  padding: 1rem 1.25rem 1.25rem;
+  /* reduced 10% for sleeker appearance */
+  padding: 0.9rem 1.125rem 1.125rem;
 }
 
 .card-title {
@@ -344,8 +345,8 @@
 }
 
 .tag-icon {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
   display: block;
   border-radius: 1px;
@@ -433,7 +434,7 @@
   }
 
   /* Cards */
-  .card-body { padding: 0.8rem 1rem 1rem; }
+  .card-body { padding: 0.6rem 1rem 1rem; }
   .card-title { font-size: 1.05rem; }
 
   /* Footer */
