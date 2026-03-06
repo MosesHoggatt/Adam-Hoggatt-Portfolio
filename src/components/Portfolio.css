@@ -328,7 +328,7 @@
 .card-minimap {
   flex: 0 0 52%;
   aspect-ratio: 16 / 9;
-  border: 1px solid #2a2a2a;
+  border: none;
   border-radius: 3px;
   overflow: hidden;
   cursor: pointer;
@@ -351,7 +351,7 @@
   font-size: 1.2rem;
   font-weight: 700;
   color: #fff;
-  margin: 0 0 0.375rem; /* ~6px */
+  margin: 0 0 0.2rem; /* ~5px */
   letter-spacing: 0.02em;
 }
 
@@ -372,7 +372,7 @@
   color: #f26501;
   background-color: rgba(200, 168, 75, 0.1);
   border: 1px solid rgba(200, 127, 75, 0.3);
-  padding: 0.15rem 0.2rem;
+  padding: 0.2rem;
   border-radius: 2px;
   transition: border-color 0.15s;
 }
