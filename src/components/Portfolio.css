@@ -358,7 +358,7 @@
 .card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 
 .tag {
@@ -372,14 +372,14 @@
   color: #f26501;
   background-color: rgba(200, 168, 75, 0.1);
   border: 1px solid rgba(200, 127, 75, 0.3);
-  padding: 0.2rem 0.3rem;
+  padding: 0.15rem 0.2rem;
   border-radius: 2px;
   transition: border-color 0.15s;
 }
 
 .tag-icon {
-  width: 19px;
-  height: 19px;
+  width: 15px;
+  height: 15px;
   object-fit: contain;
   display: block;
   border-radius: 1px;
