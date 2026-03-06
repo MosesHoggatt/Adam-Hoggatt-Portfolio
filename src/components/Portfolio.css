@@ -312,7 +312,7 @@
 
 .card-body {
   /* reduced 10% for sleeker appearance */
-  padding: 0.9rem 1.125rem 1.125rem;
+  padding: 0.9rem 0.9375rem 0.9375rem;
   display: flex;
   gap: 0.75rem;
   align-items: flex-start;
