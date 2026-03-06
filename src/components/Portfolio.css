@@ -351,14 +351,14 @@
   font-size: 1.2rem;
   font-weight: 700;
   color: #fff;
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.3125rem; /* ~5px */
   letter-spacing: 0.02em;
 }
 
 .card-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 
 .tag {
@@ -378,8 +378,8 @@
 }
 
 .tag-icon {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
   display: block;
   border-radius: 1px;
