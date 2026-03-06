@@ -218,7 +218,7 @@ const Portfolio = () => {
             return (
               <button
                 key={cat}
-                className={`filter-btn${isActive ? ' active' : ''}${!isAll && iconSrc ? ' filter-btn-icon' : ''}`}
+                className={`filter-btn${isActive ? ' active' : ''}`}
                 onClick={() => {
                   if (isAll) {
                     setActiveFilters(new Set())
@@ -229,11 +229,7 @@ const Portfolio = () => {
                 title={isAll ? '' : gameName}
                 aria-label={isAll ? 'Show all' : gameName}
               >
-                {isAll
-                  ? 'All'
-                  : iconSrc
-                    ? <img src={iconSrc} alt={gameName} className="filter-icon" />
-                    : gameName}
+                {isAll ? 'All' : gameName}
               </button>
             )
           })}
