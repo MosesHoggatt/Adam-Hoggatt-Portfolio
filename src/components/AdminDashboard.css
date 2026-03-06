@@ -199,40 +199,166 @@
 .adm-cats-input::placeholder { color: #555; }
 .adm-cats-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
 }
 .adm-cats-empty {
   font-size: 0.8rem;
   color: #555;
   font-style: italic;
 }
-.adm-cat-chip {
-  display: inline-flex;
+
+/* ── Category row (panel list) ─────────────────────────────── */
+.adm-cat-row {
+  display: flex;
   align-items: center;
-  gap: 0.3rem;
-  background: rgba(242, 101, 1, 0.12);
-  border: 1px solid rgba(242, 101, 1, 0.3);
-  color: #f26501;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  gap: 0.75rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 4px;
+  background: #111;
+  border: 1px solid #222;
+  transition: border-color 0.15s;
+}
+.adm-cat-row:hover {
+  border-color: #333;
+}
+.adm-cat-row-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
   border-radius: 3px;
-  padding: 0.2rem 0.5rem 0.2rem 0.6rem;
+  overflow: hidden;
+  background: #1e1e1e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.adm-cat-row-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.adm-cat-no-icon {
+  font-size: 0.75rem;
+  color: #555;
+  font-weight: 700;
+}
+.adm-cat-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.adm-cat-row-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #ddd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-cat-row-id {
+  font-size: 0.68rem;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-cat-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
 }
 .adm-cat-chip-rm {
   background: none;
   border: none;
-  color: #f26501;
-  opacity: 0.5;
+  color: #666;
+  opacity: 0.7;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
   line-height: 1;
-  padding: 0 0.1rem;
+  padding: 0.1rem 0.25rem;
+  transition: color 0.15s, opacity 0.15s;
+  border-radius: 3px;
+}
+.adm-cat-chip-rm:hover { opacity: 1; color: #e74c3c; }
+
+/* ── Inline category edit form ─────────────────────────────── */
+.adm-cat-edit-form {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.adm-cat-edit-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* ── New category form ─────────────────────────────────────── */
+.adm-cats-new-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+.adm-cats-new-fields {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.adm-cats-new-fields .adm-cats-input {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* ── Icon picker ───────────────────────────────────────────── */
+.adm-icon-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.adm-icon-option {
+  width: 40px;
+  height: 40px;
+  padding: 3px;
+  background: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.adm-icon-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 2px;
+  opacity: 0.7;
   transition: opacity 0.15s;
 }
-.adm-cat-chip-rm:hover { opacity: 1; }
+.adm-icon-option:hover {
+  border-color: #f26501;
+}
+.adm-icon-option:hover img {
+  opacity: 1;
+}
+.adm-icon-option.selected {
+  border-color: #f26501;
+  background: rgba(242, 101, 1, 0.12);
+}
+.adm-icon-option.selected img {
+  opacity: 1;
+}
 
 /* ── Project grid ─────────────────────────────────────────────── */
 .adm-project-grid {
@@ -416,7 +542,7 @@
 .adm-cat-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
   background: rgba(242, 101, 1, 0.15);
   border: 1px solid rgba(242, 101, 1, 0.3);
   color: #f26501;
@@ -424,6 +550,13 @@
   font-weight: 600;
   padding: 0.25rem 0.5rem;
   border-radius: 3px;
+}
+.adm-cat-pill-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 .adm-cat-pill button {
   background: none;
@@ -467,7 +600,9 @@
   z-index: 50;
 }
 .adm-cat-option {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   width: 100%;
   padding: 0.45rem 0.75rem;
   text-align: left;
@@ -481,6 +616,13 @@
 .adm-cat-option:hover {
   background: #333;
   color: #f26501;
+}
+.adm-cat-option-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 /* ── Image manager ────────────────────────────────────────────── */

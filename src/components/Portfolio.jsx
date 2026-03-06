@@ -3,6 +3,7 @@ import awsConfig from '../aws-exports'
 import Lightbox from './Lightbox'
 import heroShot from '../assets/AdamHoggattHeroShot.jpg'
 import heroBanner from '../assets/AdamHoggattBanner.jpg'
+import { CATEGORY_ICON_MAP, BUILTIN_CATEGORY_META } from '../categoryIcons'
 import './Portfolio.css'
 
 const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`
@@ -36,6 +37,7 @@ const parseBioLinks = (text) => {
 const Portfolio = () => {
   const [projects, setProjects] = useState([])
   const [allCategories, setAllCategories] = useState([])
+  const [categoryMeta, setCategoryMeta] = useState({})
   const [activeFilters, setActiveFilters] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -110,6 +112,30 @@ const Portfolio = () => {
       }
       setAllCategories(cats)
       setProjects(valid)
+
+      // 5. Load category metadata (icon + gameName) from S3, falling back to builtins
+      const meta = {}
+      // Seed with builtin defaults first
+      Object.assign(meta, BUILTIN_CATEGORY_META)
+      try {
+        const catMetaRes = await fetch(s3Url('projects/categories.json'), { cache: 'no-cache' })
+        if (catMetaRes.ok) {
+          const globalCats = await catMetaRes.json()
+          globalCats.forEach(c => {
+            if (typeof c === 'string') {
+              // Old string format — keep builtin icon if one exists
+              if (!meta[c]) meta[c] = { gameName: c, icon: null }
+            } else if (c?.id) {
+              // New object format — S3 data wins
+              meta[c.id] = {
+                gameName: c.gameName || meta[c.id]?.gameName || c.id,
+                icon: c.icon ?? meta[c.id]?.icon ?? null,
+              }
+            }
+          })
+        }
+      } catch {}
+      setCategoryMeta(meta)
     } catch (err) {
       console.error('Error loading projects from S3:', err)
       setError('Could not load projects. Please try again later.')
@@ -178,10 +204,13 @@ const Portfolio = () => {
           {['All', ...[...allCategories].reverse()].map(cat => {
             const isAll = cat === 'All'
             const isActive = isAll ? activeFilters.size === 0 : activeFilters.has(cat)
+            const meta = !isAll ? categoryMeta[cat] : null
+            const iconSrc = meta?.icon ? CATEGORY_ICON_MAP[meta.icon] : null
+            const gameName = meta?.gameName || shortName(cat)
             return (
               <button
                 key={cat}
-                className={`filter-btn${isActive ? ' active' : ''}`}
+                className={`filter-btn${isActive ? ' active' : ''}${!isAll && iconSrc ? ' filter-btn-icon' : ''}`}
                 onClick={() => {
                   if (isAll) {
                     setActiveFilters(new Set())
@@ -189,8 +218,14 @@ const Portfolio = () => {
                     setActiveFilters(prev => new Set(prev.has(cat) ? [] : [cat]))
                   }
                 }}
+                title={isAll ? '' : gameName}
+                aria-label={isAll ? 'Show all' : gameName}
               >
-                {isAll ? 'All' : shortName(cat)}
+                {isAll
+                  ? 'All'
+                  : iconSrc
+                    ? <img src={iconSrc} alt={gameName} className="filter-icon" />
+                    : gameName}
               </button>
             )
           })}
@@ -247,9 +282,18 @@ const Portfolio = () => {
             <div className="card-body">
               <h2 className="card-title">{project.title}</h2>
               <div className="card-tags">
-                {project.categories.map(c => (
-                  <span key={c} className="tag">{shortName(c)}</span>
-                ))}
+                {project.categories.map(c => {
+                  const meta = categoryMeta[c]
+                  const iconSrc = meta?.icon ? CATEGORY_ICON_MAP[meta.icon] : null
+                  const gameName = meta?.gameName || shortName(c)
+                  return (
+                    <span key={c} className="tag" title={gameName}>
+                      {iconSrc
+                        ? <img src={iconSrc} alt={gameName} className="tag-icon" />
+                        : gameName}
+                    </span>
+                  )
+                })}
               </div>
             </div>
           </article>

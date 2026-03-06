@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { uploadData, remove } from 'aws-amplify/storage'
 import { useAuthenticator } from '@aws-amplify/ui-react'
 import awsConfig from '../aws-exports'
+import { CATEGORY_ICON_MAP, AVAILABLE_ICONS, BUILTIN_CATEGORY_META } from '../categoryIcons'
 import './AdminDashboard.css'
 
 const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`
@@ -51,6 +52,9 @@ const AdminDashboard = () => {
   const [showUnsavedModal, setShowUnsavedModal] = useState(false)
   const [newCatInput, setNewCatInput] = useState('')
   const [showNewCatRow, setShowNewCatRow] = useState(false)
+  const [newCatForm, setNewCatForm] = useState({ id: '', gameName: '', icon: '' })
+  const [editCatId, setEditCatId] = useState(null)
+  const [editCatForm, setEditCatForm] = useState({ gameName: '', icon: '' })
   const [deleteCatTarget, setDeleteCatTarget] = useState(null)
 
   /* ── Refs ──────────────────────────────────────────────────── */
@@ -88,16 +92,44 @@ const AdminDashboard = () => {
       const valid = loaded.filter(Boolean).sort((a, b) =>
         (a.title || '').localeCompare(b.title || ''))
       setProjects(valid)
-      const cats = new Set(valid.flatMap(p => p.categories || []))
-      // Merge with global categories.json if it exists
+      // Collect IDs from projects
+      const catIdSet = new Set(valid.flatMap(p => p.categories || []))
+      // Seed with builtin defaults so known categories always have their icon
+      const catMetaMap = {}
+      catIdSet.forEach(id => {
+        const builtin = BUILTIN_CATEGORY_META[id]
+        catMetaMap[id] = builtin
+          ? { id, gameName: builtin.gameName, icon: builtin.icon }
+          : { id, gameName: id, icon: null }
+      })
+      // Merge with global categories.json (S3 data wins for any set fields)
       try {
         const catRes = await fetch(s3Url('projects/categories.json'), { cache: 'no-cache' })
         if (catRes.ok) {
           const globalCats = await catRes.json()
-          globalCats.forEach(c => cats.add(c))
+          globalCats.forEach(c => {
+            if (typeof c === 'string') {
+              catIdSet.add(c)
+              if (!catMetaMap[c]) {
+                const builtin = BUILTIN_CATEGORY_META[c]
+                catMetaMap[c] = builtin
+                  ? { id: c, gameName: builtin.gameName, icon: builtin.icon }
+                  : { id: c, gameName: c, icon: null }
+              }
+            } else if (c?.id) {
+              catIdSet.add(c.id)
+              const builtin = BUILTIN_CATEGORY_META[c.id]
+              catMetaMap[c.id] = {
+                id: c.id,
+                gameName: c.gameName || builtin?.gameName || c.id,
+                icon: c.icon ?? builtin?.icon ?? null,
+              }
+            }
+          })
         }
       } catch {}
-      setAllCategories([...cats].sort())
+      const sortedCats = [...catIdSet].sort().map(id => catMetaMap[id] || { id, gameName: id, icon: null })
+      setAllCategories(sortedCats)
     } catch (err) {
       console.error('Error loading projects:', err)
       showToast('Error loading levels', 'error')
@@ -503,11 +535,13 @@ const AdminDashboard = () => {
   }
 
   const addGlobalCategory = async () => {
-    const trimmed = newCatInput.trim()
-    if (!trimmed) return
-    const updated = [...new Set([...allCategories, trimmed])].sort()
+    const id = newCatForm.id.trim()
+    if (!id) return
+    if (allCategories.find(c => c.id === id)) { showToast('Category already exists', 'error'); return }
+    const newCat = { id, gameName: newCatForm.gameName.trim() || id, icon: newCatForm.icon || null }
+    const updated = [...allCategories, newCat].sort((a, b) => a.id.localeCompare(b.id))
     setAllCategories(updated)
-    setNewCatInput('')
+    setNewCatForm({ id: '', gameName: '', icon: '' })
     setShowNewCatRow(false)
     try {
       await uploadData({
@@ -518,32 +552,52 @@ const AdminDashboard = () => {
           metadata: { 'Cache-Control': 'no-cache, max-age=0' },
         },
       }).result
-      showToast(`Category "${trimmed}" added`)
+      showToast(`Category "${newCat.gameName}" added`)
     } catch (err) {
       showToast('Failed to save category', 'error')
     }
   }
 
+  const saveEditCat = async () => {
+    const updated = allCategories.map(c =>
+      c.id === editCatId
+        ? { ...c, gameName: editCatForm.gameName.trim() || c.id, icon: editCatForm.icon || null }
+        : c
+    )
+    setAllCategories(updated)
+    setEditCatId(null)
+    try {
+      await uploadData({
+        path: 'projects/categories.json',
+        data: JSON.stringify(updated),
+        options: { contentType: 'application/json', metadata: { 'Cache-Control': 'no-cache, max-age=0' } },
+      }).result
+      showToast('Category updated')
+    } catch {
+      showToast('Failed to update category', 'error')
+    }
+  }
+
   const removeGlobalCategory = (cat) => {
-    setDeleteCatTarget(cat)
+    setDeleteCatTarget(typeof cat === 'string' ? cat : cat.id)
   }
 
   const confirmRemoveGlobalCategory = async () => {
-    const cat = deleteCatTarget
+    const catId = deleteCatTarget  // always a string ID now
     setDeleteCatTarget(null)
     // 1. Remove from global list
-    const updatedCats = allCategories.filter(c => c !== cat)
+    const updatedCats = allCategories.filter(c => c.id !== catId)
     setAllCategories(updatedCats)
     // 2. Strip from every project that uses it
-    const affectedProjects = projects.filter(p => (p.categories || []).includes(cat))
+    const affectedProjects = projects.filter(p => (p.categories || []).includes(catId))
     const updatedProjects = projects.map(p =>
-      p.categories?.includes(cat)
-        ? { ...p, categories: p.categories.filter(c => c !== cat) }
+      p.categories?.includes(catId)
+        ? { ...p, categories: p.categories.filter(c => c !== catId) }
         : p
     )
     setProjects(updatedProjects)
     try {
-      // Update categories.json
+      // Update categories.json (array of objects)
       await uploadData({
         path: 'projects/categories.json',
         data: JSON.stringify(updatedCats),
@@ -551,14 +605,14 @@ const AdminDashboard = () => {
       }).result
       // Update each affected project JSON
       for (const p of affectedProjects) {
-        const updatedData = { ...p, categories: p.categories.filter(c => c !== cat) }
+        const updatedData = { ...p, categories: p.categories.filter(c => c !== catId) }
         await uploadData({
           path: `projects/${p.slug}.json`,
           data: JSON.stringify(updatedData, null, 4),
           options: { contentType: 'application/json', metadata: { 'Cache-Control': 'no-cache, max-age=0' } },
         }).result
       }
-      showToast(`Category "${cat}" removed${affectedProjects.length ? ` from ${affectedProjects.length} level(s)` : ''}`)
+      showToast(`Category "${catId}" removed${affectedProjects.length ? ` from ${affectedProjects.length} level(s)` : ''}`)
     } catch (err) {
       showToast('Failed to remove category', 'error')
     }
@@ -566,9 +620,10 @@ const AdminDashboard = () => {
 
   const filteredCatSuggestions = catInput.trim()
     ? allCategories.filter(c =>
-        c.toLowerCase().includes(catInput.toLowerCase()) &&
-        !form.categories.includes(c))
-    : allCategories.filter(c => !form.categories.includes(c))
+        (c.gameName.toLowerCase().includes(catInput.toLowerCase()) ||
+         c.id.toLowerCase().includes(catInput.toLowerCase())) &&
+        !form.categories.includes(c.id))
+    : allCategories.filter(c => !form.categories.includes(c.id))
 
   /* ════════════════════════════════════════════════════════════════
      FILTERED LIST
@@ -789,24 +844,50 @@ const AdminDashboard = () => {
             <span className="adm-cats-title">Categories</span>
             <button
               className="adm-btn adm-btn-sm adm-btn-ghost"
-              onClick={() => { setShowNewCatRow(r => !r); setNewCatInput('') }}
+              onClick={() => { setShowNewCatRow(r => !r); setNewCatForm({ id: '', gameName: '', icon: '' }) }}
               title="Add category"
             >+</button>
           </div>
           {showNewCatRow && (
             <div className="adm-cats-new-row">
-              <input
-                className="adm-cats-input"
-                type="text"
-                placeholder="New category…"
-                value={newCatInput}
-                autoFocus
-                onChange={e => setNewCatInput(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') addGlobalCategory()
-                  if (e.key === 'Escape') { setShowNewCatRow(false); setNewCatInput('') }
-                }}
-              />
+              <div className="adm-cats-new-fields">
+                <input
+                  className="adm-cats-input"
+                  type="text"
+                  placeholder="Category ID (e.g. Call of Duty: Black Ops)"
+                  value={newCatForm.id}
+                  autoFocus
+                  onChange={e => setNewCatForm(prev => ({ ...prev, id: e.target.value }))}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') addGlobalCategory()
+                    if (e.key === 'Escape') { setShowNewCatRow(false); setNewCatForm({ id: '', gameName: '', icon: '' }) }
+                  }}
+                />
+                <input
+                  className="adm-cats-input"
+                  type="text"
+                  placeholder="Display name shown on hover (optional)"
+                  value={newCatForm.gameName}
+                  onChange={e => setNewCatForm(prev => ({ ...prev, gameName: e.target.value }))}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') addGlobalCategory()
+                    if (e.key === 'Escape') { setShowNewCatRow(false); setNewCatForm({ id: '', gameName: '', icon: '' }) }
+                  }}
+                />
+              </div>
+              <div className="adm-icon-picker">
+                {AVAILABLE_ICONS.map(ic => (
+                  <button
+                    key={ic.key}
+                    className={`adm-icon-option${newCatForm.icon === ic.key ? ' selected' : ''}`}
+                    onClick={() => setNewCatForm(prev => ({ ...prev, icon: prev.icon === ic.key ? '' : ic.key }))}
+                    title={ic.label}
+                    type="button"
+                  >
+                    <img src={ic.src} alt={ic.label} />
+                  </button>
+                ))}
+              </div>
               <button className="adm-btn adm-btn-sm adm-btn-primary" onClick={addGlobalCategory}>Add</button>
             </div>
           )}
@@ -814,14 +895,62 @@ const AdminDashboard = () => {
             {allCategories.length === 0
               ? <span className="adm-cats-empty">No categories yet</span>
               : allCategories.map(cat => (
-                <span key={cat} className="adm-cat-chip">
-                  {cat}
-                  <button
-                    className="adm-cat-chip-rm"
-                    onClick={() => removeGlobalCategory(cat)}
-                    title="Remove category"
-                  >×</button>
-                </span>
+                <div key={cat.id} className="adm-cat-row">
+                  {editCatId === cat.id ? (
+                    <div className="adm-cat-edit-form">
+                      <input
+                        className="adm-cats-input"
+                        value={editCatForm.gameName}
+                        onChange={e => setEditCatForm(prev => ({ ...prev, gameName: e.target.value }))}
+                        placeholder="Display name"
+                        autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter') saveEditCat(); if (e.key === 'Escape') setEditCatId(null) }}
+                      />
+                      <div className="adm-icon-picker">
+                        {AVAILABLE_ICONS.map(ic => (
+                          <button
+                            key={ic.key}
+                            className={`adm-icon-option${editCatForm.icon === ic.key ? ' selected' : ''}`}
+                            onClick={() => setEditCatForm(prev => ({ ...prev, icon: prev.icon === ic.key ? '' : ic.key }))}
+                            title={ic.label}
+                            type="button"
+                          >
+                            <img src={ic.src} alt={ic.label} />
+                          </button>
+                        ))}
+                      </div>
+                      <div className="adm-cat-edit-actions">
+                        <button className="adm-btn adm-btn-sm adm-btn-primary" onClick={saveEditCat}>Save</button>
+                        <button className="adm-btn adm-btn-sm adm-btn-ghost" onClick={() => setEditCatId(null)}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="adm-cat-row-icon">
+                        {cat.icon && CATEGORY_ICON_MAP[cat.icon]
+                          ? <img src={CATEGORY_ICON_MAP[cat.icon]} alt={cat.gameName} />
+                          : <div className="adm-cat-no-icon">?</div>}
+                      </div>
+                      <div className="adm-cat-row-info">
+                        <span className="adm-cat-row-name">{cat.gameName}</span>
+                        {cat.gameName !== cat.id && (
+                          <span className="adm-cat-row-id">{cat.id}</span>
+                        )}
+                      </div>
+                      <div className="adm-cat-row-actions">
+                        <button
+                          className="adm-btn adm-btn-sm adm-btn-ghost"
+                          onClick={() => { setEditCatId(cat.id); setEditCatForm({ gameName: cat.gameName, icon: cat.icon || '' }) }}
+                        >Edit</button>
+                        <button
+                          className="adm-cat-chip-rm"
+                          onClick={() => removeGlobalCategory(cat)}
+                          title="Remove category"
+                        >×</button>
+                      </div>
+                    </>
+                  )}
+                </div>
               ))
             }
           </div>
@@ -941,13 +1070,18 @@ const AdminDashboard = () => {
         <section className="adm-section">
           <h3>Categories</h3>
           <div className="adm-cat-pills">
-            {form.categories.map(cat => (
-              <span key={cat} className="adm-cat-pill">
-                {cat}
-                <button onClick={() => removeCategory(cat)}
-                  aria-label={`Remove ${cat}`}>&times;</button>
-              </span>
-            ))}
+            {form.categories.map(catId => {
+              const catMeta = allCategories.find(c => c.id === catId) || { id: catId, gameName: catId, icon: null }
+              const iconSrc = catMeta.icon ? CATEGORY_ICON_MAP[catMeta.icon] : null
+              return (
+                <span key={catId} className="adm-cat-pill">
+                  {iconSrc && <img src={iconSrc} alt="" className="adm-cat-pill-icon" />}
+                  <span>{catMeta.gameName}</span>
+                  <button onClick={() => removeCategory(catId)}
+                    aria-label={`Remove ${catMeta.gameName}`}>&times;</button>
+                </span>
+              )
+            })}
           </div>
           <div className="adm-cat-input-wrap">
             <input
@@ -967,22 +1101,26 @@ const AdminDashboard = () => {
                 }
                 if (e.key === 'Escape') setShowCatDropdown(false)
               }}
-              placeholder="Add category…"
+              placeholder="Search or type category ID…"
             />
             {showCatDropdown && filteredCatSuggestions.length > 0 && (
               <div className="adm-cat-dropdown">
-                {filteredCatSuggestions.map(cat => (
-                  <button key={cat} className="adm-cat-option"
-                    onMouseDown={e => e.preventDefault()}
-                    onClick={() => addCategory(cat)}>
-                    {cat}
-                  </button>
-                ))}
+                {filteredCatSuggestions.map(cat => {
+                  const iconSrc = cat.icon ? CATEGORY_ICON_MAP[cat.icon] : null
+                  return (
+                    <button key={cat.id} className="adm-cat-option"
+                      onMouseDown={e => e.preventDefault()}
+                      onClick={() => addCategory(cat.id)}>
+                      {iconSrc && <img src={iconSrc} alt="" className="adm-cat-option-icon" />}
+                      {cat.gameName}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
           <p className="adm-hint">
-            Type a new category name and press Enter, or select from existing.
+            Select from existing categories or type a category ID and press Enter.
           </p>
         </section>
 
