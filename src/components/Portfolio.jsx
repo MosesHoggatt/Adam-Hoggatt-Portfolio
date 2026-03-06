@@ -205,7 +205,7 @@ const Portfolio = () => {
             const isAll = cat === 'All'
             const isActive = isAll ? activeFilters.size === 0 : activeFilters.has(cat)
             const meta = !isAll ? categoryMeta[cat] : null
-            const iconSrc = meta?.icon ? CATEGORY_ICON_MAP[meta.icon] : null
+            const iconSrc = meta?.icon ? (CATEGORY_ICON_MAP[meta.icon] || s3Url(meta.icon)) : null
             const gameName = meta?.gameName || shortName(cat)
             return (
               <button
@@ -284,7 +284,7 @@ const Portfolio = () => {
               <div className="card-tags">
                 {project.categories.map(c => {
                   const meta = categoryMeta[c]
-                  const iconSrc = meta?.icon ? CATEGORY_ICON_MAP[meta.icon] : null
+                  const iconSrc = meta?.icon ? (CATEGORY_ICON_MAP[meta.icon] || s3Url(meta.icon)) : null
                   const gameName = meta?.gameName || shortName(c)
                   return (
                     <span key={c} className="tag" title={gameName}>

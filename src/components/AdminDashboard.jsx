@@ -8,6 +8,10 @@ import './AdminDashboard.css'
 
 const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`
 const s3Url = (path) => `${S3_BASE}/${path}`
+const getIconSrc = (icon) => {
+  if (!icon) return null
+  return CATEGORY_ICON_MAP[icon] || s3Url(icon)
+}
 
 const slugify = (str) =>
   str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
@@ -53,14 +57,20 @@ const AdminDashboard = () => {
   const [newCatInput, setNewCatInput] = useState('')
   const [showNewCatRow, setShowNewCatRow] = useState(false)
   const [newCatForm, setNewCatForm] = useState({ id: '', gameName: '', icon: '' })
+  const [newCatIconFile, setNewCatIconFile] = useState(null)
+  const [newCatIconPreview, setNewCatIconPreview] = useState(null)
   const [editCatId, setEditCatId] = useState(null)
   const [editCatForm, setEditCatForm] = useState({ gameName: '', icon: '' })
+  const [editCatIconFile, setEditCatIconFile] = useState(null)
+  const [editCatIconPreview, setEditCatIconPreview] = useState(null)
   const [deleteCatTarget, setDeleteCatTarget] = useState(null)
 
   /* ── Refs ──────────────────────────────────────────────────── */
   const fileInputRef = useRef(null)
   const profilePhotoInputRef = useRef(null)
   const bannerInputRef = useRef(null)
+  const newCatIconInputRef = useRef(null)
+  const editCatIconInputRef = useRef(null)
   const dragItem = useRef(null)
   const dragOverItem = useRef(null)
   const toastTimer = useRef(null)
@@ -538,19 +548,26 @@ const AdminDashboard = () => {
     const id = newCatForm.id.trim()
     if (!id) return
     if (allCategories.find(c => c.id === id)) { showToast('Category already exists', 'error'); return }
-    const newCat = { id, gameName: newCatForm.gameName.trim() || id, icon: newCatForm.icon || null }
-    const updated = [...allCategories, newCat].sort((a, b) => a.id.localeCompare(b.id))
-    setAllCategories(updated)
-    setNewCatForm({ id: '', gameName: '', icon: '' })
-    setShowNewCatRow(false)
+    let iconValue = newCatForm.icon || null
     try {
+      if (newCatIconFile) {
+        const ext = newCatIconFile.name.split('.').pop().toLowerCase()
+        const iconPath = `categories/icons/${slugify(id)}.${ext}`
+        await uploadData({ path: iconPath, data: newCatIconFile, options: { contentType: newCatIconFile.type } }).result
+        iconValue = iconPath
+        URL.revokeObjectURL(newCatIconPreview)
+        setNewCatIconFile(null)
+        setNewCatIconPreview(null)
+      }
+      const newCat = { id, gameName: newCatForm.gameName.trim() || id, icon: iconValue }
+      const updated = [...allCategories, newCat].sort((a, b) => a.id.localeCompare(b.id))
+      setAllCategories(updated)
+      setNewCatForm({ id: '', gameName: '', icon: '' })
+      setShowNewCatRow(false)
       await uploadData({
         path: 'projects/categories.json',
         data: JSON.stringify(updated),
-        options: {
-          contentType: 'application/json',
-          metadata: { 'Cache-Control': 'no-cache, max-age=0' },
-        },
+        options: { contentType: 'application/json', metadata: { 'Cache-Control': 'no-cache, max-age=0' } },
       }).result
       showToast(`Category "${newCat.gameName}" added`)
     } catch (err) {
@@ -559,14 +576,24 @@ const AdminDashboard = () => {
   }
 
   const saveEditCat = async () => {
-    const updated = allCategories.map(c =>
-      c.id === editCatId
-        ? { ...c, gameName: editCatForm.gameName.trim() || c.id, icon: editCatForm.icon || null }
-        : c
-    )
-    setAllCategories(updated)
-    setEditCatId(null)
+    let iconValue = editCatForm.icon || null
     try {
+      if (editCatIconFile) {
+        const ext = editCatIconFile.name.split('.').pop().toLowerCase()
+        const iconPath = `categories/icons/${slugify(editCatId)}.${ext}`
+        await uploadData({ path: iconPath, data: editCatIconFile, options: { contentType: editCatIconFile.type } }).result
+        iconValue = iconPath
+        URL.revokeObjectURL(editCatIconPreview)
+        setEditCatIconFile(null)
+        setEditCatIconPreview(null)
+      }
+      const updated = allCategories.map(c =>
+        c.id === editCatId
+          ? { ...c, gameName: editCatForm.gameName.trim() || c.id, icon: iconValue }
+          : c
+      )
+      setAllCategories(updated)
+      setEditCatId(null)
       await uploadData({
         path: 'projects/categories.json',
         data: JSON.stringify(updated),
@@ -880,13 +907,49 @@ const AdminDashboard = () => {
                   <button
                     key={ic.key}
                     className={`adm-icon-option${newCatForm.icon === ic.key ? ' selected' : ''}`}
-                    onClick={() => setNewCatForm(prev => ({ ...prev, icon: prev.icon === ic.key ? '' : ic.key }))}
+                    onClick={() => {
+                      if (newCatIconPreview) { URL.revokeObjectURL(newCatIconPreview); setNewCatIconFile(null); setNewCatIconPreview(null) }
+                      setNewCatForm(prev => ({ ...prev, icon: prev.icon === ic.key ? '' : ic.key }))
+                    }}
                     title={ic.label}
                     type="button"
                   >
                     <img src={ic.src} alt={ic.label} />
                   </button>
                 ))}
+                {newCatIconPreview ? (
+                  <div className="adm-icon-option adm-icon-option-custom selected">
+                    <img src={newCatIconPreview} alt="Custom" />
+                    <button
+                      className="adm-icon-custom-rm"
+                      onClick={e => { e.stopPropagation(); URL.revokeObjectURL(newCatIconPreview); setNewCatIconFile(null); setNewCatIconPreview(null) }}
+                      title="Remove custom icon"
+                      type="button"
+                    >&times;</button>
+                  </div>
+                ) : (
+                  <button
+                    className="adm-icon-option adm-icon-upload-btn"
+                    onClick={() => newCatIconInputRef.current?.click()}
+                    title="Upload custom icon"
+                    type="button"
+                  >+</button>
+                )}
+                <input
+                  ref={newCatIconInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setNewCatForm(prev => ({ ...prev, icon: '' }))
+                    if (newCatIconPreview) URL.revokeObjectURL(newCatIconPreview)
+                    setNewCatIconFile(file)
+                    setNewCatIconPreview(URL.createObjectURL(file))
+                    e.target.value = ''
+                  }}
+                />
               </div>
               <button className="adm-btn adm-btn-sm adm-btn-primary" onClick={addGlobalCategory}>Add</button>
             </div>
@@ -911,24 +974,72 @@ const AdminDashboard = () => {
                           <button
                             key={ic.key}
                             className={`adm-icon-option${editCatForm.icon === ic.key ? ' selected' : ''}`}
-                            onClick={() => setEditCatForm(prev => ({ ...prev, icon: prev.icon === ic.key ? '' : ic.key }))}
+                            onClick={() => {
+                              if (editCatIconFile) { URL.revokeObjectURL(editCatIconPreview); setEditCatIconFile(null) }
+                              setEditCatIconPreview(null)
+                              setEditCatForm(prev => ({ ...prev, icon: prev.icon === ic.key ? '' : ic.key }))
+                            }}
                             title={ic.label}
                             type="button"
                           >
                             <img src={ic.src} alt={ic.label} />
                           </button>
                         ))}
+                        {editCatIconPreview ? (
+                          <div className="adm-icon-option adm-icon-option-custom selected">
+                            <img src={editCatIconPreview} alt="Custom" />
+                            <button
+                              className="adm-icon-custom-rm"
+                              onClick={e => {
+                                e.stopPropagation()
+                                if (editCatIconFile) URL.revokeObjectURL(editCatIconPreview)
+                                setEditCatIconFile(null)
+                                setEditCatIconPreview(null)
+                                setEditCatForm(prev => ({ ...prev, icon: '' }))
+                              }}
+                              title="Remove custom icon"
+                              type="button"
+                            >&times;</button>
+                          </div>
+                        ) : (
+                          <button
+                            className="adm-icon-option adm-icon-upload-btn"
+                            onClick={() => editCatIconInputRef.current?.click()}
+                            title="Upload custom icon"
+                            type="button"
+                          >+</button>
+                        )}
+                        <input
+                          ref={editCatIconInputRef}
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={e => {
+                            const file = e.target.files?.[0]
+                            if (!file) return
+                            setEditCatForm(prev => ({ ...prev, icon: '' }))
+                            if (editCatIconFile) URL.revokeObjectURL(editCatIconPreview)
+                            setEditCatIconFile(file)
+                            setEditCatIconPreview(URL.createObjectURL(file))
+                            e.target.value = ''
+                          }}
+                        />
                       </div>
                       <div className="adm-cat-edit-actions">
                         <button className="adm-btn adm-btn-sm adm-btn-primary" onClick={saveEditCat}>Save</button>
-                        <button className="adm-btn adm-btn-sm adm-btn-ghost" onClick={() => setEditCatId(null)}>Cancel</button>
+                        <button className="adm-btn adm-btn-sm adm-btn-ghost" onClick={() => {
+                          if (editCatIconFile) URL.revokeObjectURL(editCatIconPreview)
+                          setEditCatIconFile(null)
+                          setEditCatIconPreview(null)
+                          setEditCatId(null)
+                        }}>Cancel</button>
                       </div>
                     </div>
                   ) : (
                     <>
                       <div className="adm-cat-row-icon">
-                        {cat.icon && CATEGORY_ICON_MAP[cat.icon]
-                          ? <img src={CATEGORY_ICON_MAP[cat.icon]} alt={cat.gameName} />
+                        {getIconSrc(cat.icon)
+                          ? <img src={getIconSrc(cat.icon)} alt={cat.gameName} />
                           : <div className="adm-cat-no-icon">?</div>}
                       </div>
                       <div className="adm-cat-row-info">
@@ -940,7 +1051,16 @@ const AdminDashboard = () => {
                       <div className="adm-cat-row-actions">
                         <button
                           className="adm-btn adm-btn-sm adm-btn-ghost"
-                          onClick={() => { setEditCatId(cat.id); setEditCatForm({ gameName: cat.gameName, icon: cat.icon || '' }) }}
+                          onClick={() => {
+                            setEditCatId(cat.id)
+                            setEditCatForm({ gameName: cat.gameName, icon: CATEGORY_ICON_MAP[cat.icon] ? cat.icon : '' })
+                            setEditCatIconFile(null)
+                            if (cat.icon && !CATEGORY_ICON_MAP[cat.icon]) {
+                              setEditCatIconPreview(s3Url(cat.icon))
+                            } else {
+                              setEditCatIconPreview(null)
+                            }
+                          }}
                         >Edit</button>
                         <button
                           className="adm-cat-chip-rm"
@@ -1072,7 +1192,7 @@ const AdminDashboard = () => {
           <div className="adm-cat-pills">
             {form.categories.map(catId => {
               const catMeta = allCategories.find(c => c.id === catId) || { id: catId, gameName: catId, icon: null }
-              const iconSrc = catMeta.icon ? CATEGORY_ICON_MAP[catMeta.icon] : null
+              const iconSrc = getIconSrc(catMeta.icon)
               return (
                 <span key={catId} className="adm-cat-pill">
                   {iconSrc && <img src={iconSrc} alt="" className="adm-cat-pill-icon" />}
@@ -1106,7 +1226,7 @@ const AdminDashboard = () => {
             {showCatDropdown && filteredCatSuggestions.length > 0 && (
               <div className="adm-cat-dropdown">
                 {filteredCatSuggestions.map(cat => {
-                  const iconSrc = cat.icon ? CATEGORY_ICON_MAP[cat.icon] : null
+                  const iconSrc = getIconSrc(cat.icon)
                   return (
                     <button key={cat.id} className="adm-cat-option"
                       onMouseDown={e => e.preventDefault()}

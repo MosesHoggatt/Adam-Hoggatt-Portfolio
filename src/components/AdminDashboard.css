@@ -360,7 +360,51 @@
   opacity: 1;
 }
 
-/* ── Project grid ─────────────────────────────────────────────── */
+/* Upload placeholder button */
+.adm-icon-upload-btn {
+  border-style: dashed;
+  color: #555;
+  font-size: 1.3rem;
+  font-weight: 300;
+  line-height: 1;
+}
+.adm-icon-upload-btn:hover {
+  border-color: #f26501;
+  color: #f26501;
+}
+
+/* Custom uploaded icon slot */
+.adm-icon-option-custom {
+  position: relative;
+}
+.adm-icon-option-custom img {
+  opacity: 1;
+}
+.adm-icon-custom-rm {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #e74c3c;
+  border: none;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s;
+}
+.adm-icon-custom-rm:hover {
+  background: #ff2b2b;
+}
+
+
 .adm-project-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
