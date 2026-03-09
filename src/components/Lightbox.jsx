@@ -7,10 +7,13 @@ const s3Url = (path) => `${S3_BASE}/${path}`
 const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
 
 // ── Global image loader ───────────────────────────────────────────────────────
-// Single pool shared across every project. Max 6 concurrent downloads.
-// Already-downloaded URLs are remembered so they're never re-fetched.
+// Single pool shared across every project. Max 10 concurrent downloads.
+// Successfully loaded Image objects are kept alive in `cache` so the browser
+// retains their decoded pixel data in memory — preventing the "slow re-decode
+// from disk cache" problem on revisited images.
 const MAX_SLOTS = 10
 const loaded  = new Set()   // completed URLs (in browser cache)
+const cache   = new Map()   // url → Image  (keeps decoded frame in memory)
 let   active  = []          // Image objects currently downloading
 let   pending = []          // URLs waiting for a free slot
 
@@ -21,7 +24,7 @@ function drain() {
     const img = new Image()
     active.push(img)
     const finish = (ok) => () => {
-      if (ok) loaded.add(url)
+      if (ok) { loaded.add(url); cache.set(url, img) }
       active = active.filter(a => a !== img)
       img.onload = img.onerror = null
       drain()
