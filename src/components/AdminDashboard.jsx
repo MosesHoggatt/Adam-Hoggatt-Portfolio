@@ -541,15 +541,24 @@ const AdminDashboard = () => {
   const deleteProject = async (slug) => {
     setSaving(true)
     try {
-      const project = projects.find(p => p.slug === slug)
-      if (project?.images) {
-        for (const path of project.images) {
-          try { await remove({ path }) } catch {}
-        }
+      // 1. List every S3 key under projects/<slug>/ using the public S3 list API
+      const prefix = `projects/${slug}/`
+      const listUrl = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com/?list-type=2&prefix=${encodeURIComponent(prefix)}`
+      const xml = await fetch(listUrl).then(r => r.text())
+      const keys = [...xml.matchAll(/<Key>([^<]+)<\/Key>/g)].map(m => m[1])
+
+      // 2. Delete every object under that prefix (images, thumbnails, card, minimap)
+      for (const key of keys) {
+        try { await remove({ path: key }) } catch {}
       }
-      await remove({ path: `projects/${slug}.json` })
+
+      // 3. Delete the project JSON
+      try { await remove({ path: `projects/${slug}.json` }) } catch {}
+
+      // 4. Rebuild the index without this project
       const updatedProjects = projects.filter(p => p.slug !== slug)
       await rebuildIndex(updatedProjects)
+
       showToast('Level deleted')
       await fetchProjects()
       setDeleteTarget(null)
