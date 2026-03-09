@@ -217,7 +217,7 @@ const Portfolio = () => {
               className="hero-shot hero-shot-clickable"
               onClick={() => setShowBioModal(true)}
               title="View bio"
-              fetchPriority="high"
+              fetchpriority="high"
             />
             <div className="hero-text">
               <h1 className="hero-title">Adam Hoggatt</h1>
@@ -314,7 +314,7 @@ const Portfolio = () => {
                     alt={project.title}
                     loading={idx < 6 ? 'eager' : 'lazy'}
                     decoding={idx < 6 ? 'sync' : 'async'}
-                    fetchPriority={idx < 6 ? 'high' : 'auto'}
+                    fetchpriority={idx < 6 ? 'high' : 'auto'}
                     onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = s3Url(project.images[0]) }}
                   />
                 : <div className="image-placeholder" />}
