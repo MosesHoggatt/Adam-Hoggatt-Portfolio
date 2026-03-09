@@ -6,6 +6,39 @@ const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S
 const s3Url = (path) => `${S3_BASE}/${path}`
 const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
 
+/* Cancel all Image objects in an array and clear it */
+const cancelImgs = (arr) => {
+  arr.forEach(img => { img.onload = img.onerror = null; img.src = '' })
+  arr.length = 0
+}
+
+/* Start at most `concurrency` loads; each completion chains the next from queue */
+function startQueue(urls, concurrency, onAllDone) {
+  let idx = 0
+  let alive = true
+  const pool = []
+
+  function next() {
+    if (!alive || idx >= urls.length) {
+      if (alive && typeof onAllDone === 'function') onAllDone()
+      return
+    }
+    const img = new Image()
+    pool.push(img)
+    img.onload = img.onerror = next
+    img.src = urls[idx++]
+  }
+  for (let i = 0; i < Math.min(concurrency, urls.length); i++) next()
+
+  return {
+    cancel() {
+      alive = false
+      cancelImgs(pool)
+    },
+    pool,
+  }
+}
+
 const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextProject, onClose, initialShowMinimap = false }) => {
   const imagePaths = project?.images || []
   const images = imagePaths.map(s3Url)
@@ -15,7 +48,8 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
   const [showingMinimap, setShowingMinimap] = useState(initialShowMinimap)
   const thumbsRef = useRef(null)
   const prevProjectRef = useRef(project)
-  const preloadCache = useRef([])
+  const preloadQueue = useRef(null)   // current project's background queue
+  const neighbourCache = useRef([])   // next/prev images for active index
 
   /* Reset index on project navigation (prev/next), but NOT on initial mount */
   useEffect(() => {
@@ -32,47 +66,48 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  /* Preload all full-res images in priority order:
-     1. Image 0 (active index resets to 0 on project change)
-     2. Minimap
-     3. Outward from index 0 with wraparound
-     Store refs so the browser doesn't GC+cancel the requests.
-     Re-runs when project changes so navigating prev/next map re-preloads. */
+  /* Cancel all pending loads and start a fresh queued preload for this project.
+     Uses controlled concurrency (3 simultaneous) so rapid project switching
+     doesn't saturate the browser connection pool with stale requests. */
   useEffect(() => {
+    // Kill any still-running loads from the previous project immediately
+    if (preloadQueue.current) preloadQueue.current.cancel()
+    cancelImgs(neighbourCache.current)
+
     const n = images.length
     if (n === 0) return
 
+    // Priority: image[0] first, then minimap, then outward from index 0
     const ordered = [images[0]]
     if (minimapUrl) ordered.push(minimapUrl)
-
     for (let offset = 1; offset < n; offset++) {
       ordered.push(images[offset % n])
-      const prev = (n - offset) % n
-      if (prev !== offset % n) ordered.push(images[prev])
+      const back = (n - offset) % n
+      if (back !== offset % n) ordered.push(images[back])
     }
 
-    const imgs = ordered.map((src) => {
-      const img = new Image()
-      img.src = src
-      return img
-    })
-    preloadCache.current = imgs
+    preloadQueue.current = startQueue(ordered, 3)
+    return () => {
+      if (preloadQueue.current) preloadQueue.current.cancel()
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project])
 
-  /* Eagerly preload immediate neighbours whenever the active index changes,
-     so rapid navigation doesn't wait for the full background preload order. */
+  /* Immediately preload the two neighbours of the active image.
+     Cancel the previous pair first so rapid navigation can't pile up. */
   useEffect(() => {
+    cancelImgs(neighbourCache.current)
     const n = images.length
     if (n === 0) return
     const srcs = [
       images[(activeIndex + 1) % n],
       images[(activeIndex - 1 + n) % n],
     ]
-    const imgs = srcs.map(src => { const img = new Image(); img.src = src; return img })
-    preloadCache.current = preloadCache.current.concat(imgs)
+    const q = startQueue(srcs, 2)
+    neighbourCache.current = q.pool
+    return () => q.cancel()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIndex])
+  }, [activeIndex, project])
 
   /* Scroll active thumb into view whenever index changes */
   useEffect(() => {
