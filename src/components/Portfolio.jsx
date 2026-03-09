@@ -195,7 +195,7 @@ const Portfolio = () => {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch(s3Url('profile/profile.json'))
+      const res = await fetch(s3Url('profile/profile.json'), { cache: 'no-cache' })
       if (res.ok) setProfile(await res.json())
     } catch {}
   }

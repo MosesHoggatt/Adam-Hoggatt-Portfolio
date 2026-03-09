@@ -951,6 +951,29 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {/* Download progress overlay */}
+      {downloading && (
+        <div className="adm-dl-overlay">
+          <div className="adm-dl-box">
+            <p className="adm-dl-title">Packaging Download</p>
+            <div className="adm-dl-bar-track">
+              <div
+                className="adm-dl-bar-fill"
+                style={{ width: dlProgress.total ? `${Math.round((dlProgress.done / dlProgress.total) * 100)}%` : '0%' }}
+              />
+            </div>
+            <p className="adm-dl-meta">
+              {dlProgress.total
+                ? `${dlProgress.done} / ${dlProgress.total} files`
+                : 'Starting…'}
+            </p>
+            {dlProgress.label && (
+              <p className="adm-dl-label">{dlProgress.label}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Unsaved changes modal */}
       {showUnsavedModal && (
         <div className="adm-modal-backdrop" onClick={() => setShowUnsavedModal(false)}>
