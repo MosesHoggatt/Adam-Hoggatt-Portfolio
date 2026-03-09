@@ -252,7 +252,12 @@ const Portfolio = () => {
                 title={isAll ? '' : gameName}
                 aria-label={isAll ? 'Show all' : gameName}
               >
-                {isAll ? 'All' : gameName}
+                {isAll ? 'All' : (
+                  <>
+                    {iconSrc && <img src={iconSrc} alt={gameName} className="filter-icon" />}
+                    <span className="filter-btn-label">{gameName}</span>
+                  </>
+                )}
               </button>
             )
           })}

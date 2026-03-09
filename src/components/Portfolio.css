@@ -126,6 +126,11 @@
   justify-content: center;
 }
 
+/* Icon is hidden on desktop — filter buttons show text labels */
+.filter-btn .filter-icon {
+  display: none;
+}
+
 /* Icon variant — tighter padding, fixed square-ish size */
 .filter-btn-icon {
   padding: 0.25rem;
@@ -424,6 +429,24 @@
   .hero-title { font-size: 1.3rem; }
   .hero-subtitle { font-size: 0.8rem; }
   .hero-role { font-size: 0.72rem; }
+
+  /* Filter buttons: switch to icon-only squares on mobile when an icon is available */
+  .filter-btn:has(.filter-icon) {
+    width: 44px;
+    height: 44px;
+    padding: 0.2rem;
+    flex-shrink: 0;
+  }
+  .filter-btn:has(.filter-icon) .filter-icon {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 2px;
+  }
+  .filter-btn:has(.filter-icon) .filter-btn-label {
+    display: none;
+  }
 
   /* Filter bar — stack vertically */
   .filter-bar {
