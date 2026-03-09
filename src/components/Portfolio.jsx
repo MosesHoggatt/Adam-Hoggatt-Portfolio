@@ -391,8 +391,8 @@ const Portfolio = () => {
           allProjects={filteredProjects}
           projectIndex={lightboxIndex}
           totalProjects={filteredProjects.length}
-          onPrevProject={() => setLightboxIndex(i => Math.max(i - 1, 0))}
-          onNextProject={() => setLightboxIndex(i => Math.min(i + 1, filteredProjects.length - 1))}
+          onPrevProject={() => setLightboxIndex(i => (i - 1 + filteredProjects.length) % filteredProjects.length)}
+          onNextProject={() => setLightboxIndex(i => (i + 1) % filteredProjects.length)}
           onClose={() => setLightboxIndex(null)}
           initialShowMinimap={lightboxInitialMinimap}
         />

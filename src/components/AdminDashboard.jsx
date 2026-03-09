@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { uploadData, remove } from 'aws-amplify/storage'
 import { useAuthenticator } from '@aws-amplify/ui-react'
+import JSZip from 'jszip'
 import awsConfig from '../aws-exports'
 import { CATEGORY_ICON_MAP, AVAILABLE_ICONS, BUILTIN_CATEGORY_META } from '../categoryIcons'
 import './AdminDashboard.css'
@@ -850,8 +851,96 @@ const AdminDashboard = () => {
     : projects
 
   /* ════════════════════════════════════════════════════════════════
-     R E N D E R
+     DOWNLOAD ALL CONTENT
      ════════════════════════════════════════════════════════════════ */
+  const [downloading, setDownloading] = useState(false)
+
+  const downloadAllContent = async () => {
+    setDownloading(true)
+    showToast('Preparing download… this may take a moment.', 'success')
+
+    const fetchBlob = async (url) => {
+      try {
+        const res = await fetch(url)
+        if (!res.ok) return null
+        return await res.blob()
+      } catch { return null }
+    }
+
+    const extFrom = (path) => {
+      const m = path.match(/\.(\w+)$/)
+      return m ? `.${m[1]}` : ''
+    }
+
+    try {
+      const zip = new JSZip()
+
+      // ── Profile ─────────────────────────────────────────────────
+      const profileFolder = zip.folder('profile')
+
+      // bio.txt
+      if (profile.bio?.trim()) {
+        profileFolder.file('bio.txt', profile.bio)
+      }
+
+      // profile photo
+      if (profile.photoPath) {
+        const blob = await fetchBlob(s3Url(profile.photoPath))
+        if (blob) profileFolder.file(`photo${extFrom(profile.photoPath)}`, blob)
+      }
+
+      // banner
+      if (profile.bannerPath) {
+        const blob = await fetchBlob(s3Url(profile.bannerPath))
+        if (blob) profileFolder.file(`banner${extFrom(profile.bannerPath)}`, blob)
+      }
+
+      // ── Levels ──────────────────────────────────────────────────
+      const levelsFolder = zip.folder('levels')
+      for (const project of projects) {
+        const levelFolder = levelsFolder.folder(project.slug)
+        const imagesFolder = levelFolder.folder('images')
+
+        // Source gallery images (skip thumbnails/card derivatives)
+        for (const imagePath of (project.images || [])) {
+          const blob = await fetchBlob(s3Url(imagePath))
+          if (blob) {
+            const filename = imagePath.split('/').pop()
+            imagesFolder.file(filename, blob)
+          }
+        }
+
+        // Minimap — stored flat in the level folder
+        if (project.minimap) {
+          const blob = await fetchBlob(s3Url(project.minimap))
+          if (blob) {
+            const filename = project.minimap.split('/').pop()
+            levelFolder.file(`minimap_${filename}`, blob)
+          }
+        }
+      }
+
+      // ── Generate and trigger download ───────────────────────────
+      const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } })
+      const url = URL.createObjectURL(zipBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'portfolio-content.zip'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+
+      showToast('Download ready!')
+    } catch (err) {
+      console.error('Download error:', err)
+      showToast(`Download failed: ${err.message}`, 'error')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+
   return (
     <div className="adm">
       {/* Toast */}
@@ -1046,6 +1135,14 @@ const AdminDashboard = () => {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
+          <button
+            className="adm-btn adm-btn-ghost"
+            onClick={downloadAllContent}
+            disabled={downloading || projects.length === 0}
+            title="Download all source images, profile photo, banner, and bio as a ZIP"
+          >
+            {downloading ? 'Packaging…' : '⬇ Download All'}
+          </button>
           <button className="adm-btn adm-btn-primary"
             onClick={() => openEditor()}>
             + New Level

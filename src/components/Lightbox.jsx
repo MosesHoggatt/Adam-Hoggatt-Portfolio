@@ -144,8 +144,8 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
     if (e.key === 'Escape')     onClose()
     if (e.key === 'ArrowRight') { setShowingMinimap(false); setActiveIndex(i => (i + 1) % images.length) }
     if (e.key === 'ArrowLeft')  { setShowingMinimap(false); setActiveIndex(i => (i - 1 + images.length) % images.length) }
-    if (e.key === '[' && projectIndex > 0)                      onPrevProject()
-    if (e.key === ']' && projectIndex < totalProjects - 1)      onNextProject()
+    if (e.key === '[') onPrevProject()
+    if (e.key === ']') onNextProject()
   }, [onClose, images.length, projectIndex, totalProjects, onPrevProject, onNextProject])
 
   useEffect(() => {
@@ -248,7 +248,6 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
           <button
             className="lb-footer-nav lb-footer-prev"
             onClick={onPrevProject}
-            disabled={projectIndex === 0}
             aria-label="Previous map"
           >&#8592; Prev</button>
 
@@ -257,7 +256,6 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
           <button
             className="lb-footer-nav lb-footer-next"
             onClick={onNextProject}
-            disabled={projectIndex === totalProjects - 1}
             aria-label="Next map"
           >Next &#8594;</button>
         </div>
