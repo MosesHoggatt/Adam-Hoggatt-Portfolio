@@ -54,7 +54,7 @@ function generateCardImage(file) {
       ctx.drawImage(img, 0, 0, w, h)
       canvas.toBlob(
         (blob) => { URL.revokeObjectURL(img.src); resolve(blob) },
-        'image/jpeg',
+        'image/webp',
         CARD_QUALITY,
       )
     }
@@ -104,7 +104,7 @@ function generateCardImageFromUrl(url) {
       ctx.drawImage(img, 0, 0, w, h)
       canvas.toBlob(
         (blob) => resolve(blob),
-        'image/jpeg',
+        'image/webp',
         CARD_QUALITY,
       )
     }
@@ -429,7 +429,7 @@ const AdminDashboard = () => {
           resolvedPath = item.path
           // Ensure small thumbnail + card image exist for existing images
           const thumbPath = resolvedPath.replace('/images/', '/thumbnails/')
-          const cardPath  = resolvedPath.replace('/images/', '/card/')
+          const cardPath  = resolvedPath.replace('/images/', '/card/').replace(/\.(jpe?g|png|gif)$/i, '.webp')
           try {
             const [thumbRes, cardRes] = await Promise.all([
               fetch(s3Url(thumbPath), { method: 'HEAD' }),
@@ -442,7 +442,7 @@ const AdminDashboard = () => {
                 if (thumbBlob) await uploadData({ path: thumbPath, data: thumbBlob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
               }
               if (!cardRes.ok && blob) {
-                await uploadData({ path: cardPath, data: blob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
+                await uploadData({ path: cardPath, data: blob, options: { contentType: 'image/webp', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
               }
             }
           } catch { /* best-effort */ }
@@ -465,8 +465,8 @@ const AdminDashboard = () => {
               await uploadData({ path: thumbPath, data: thumbBlob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
             }
             if (cardBlob) {
-              const cardPath = `projects/${slug}/card/${fileName}`
-              await uploadData({ path: cardPath, data: cardBlob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
+              const cardPath = `projects/${slug}/card/${fileName.replace(/\.(jpe?g|png|gif)$/i, '.webp')}`
+              await uploadData({ path: cardPath, data: cardBlob, options: { contentType: 'image/webp', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
             }
           } catch { /* best-effort */ }
           resolvedPath = path

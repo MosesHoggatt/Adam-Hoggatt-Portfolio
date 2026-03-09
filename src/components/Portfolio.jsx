@@ -12,7 +12,7 @@ const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S
 // to a public HTTPS URL — no signing, no Cognito needed.
 const s3Url = (path) => `${S3_BASE}/${path}`
 const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
-const cardUrl  = (path) => s3Url(path.replace('/images/', '/card/'))
+const cardUrl  = (path) => s3Url(path.replace('/images/', '/card/').replace(/\.(jpe?g|png|gif)$/i, '.webp'))
 
 /** Preload a list of URLs into the browser cache without blocking render.
  *  Returns the Image objects so callers can keep them alive (prevent GC cancellation). */
@@ -117,9 +117,12 @@ const Portfolio = () => {
         .filter(Boolean)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
 
-      // Kick off background thumbnail preload for all projects immediately
-      // so thumbnails are cached before the user opens any lightbox
+      // Kick off background card image preload for all projects immediately
+      // so card images are cached before the user scrolls to them
       setTimeout(() => {
+        valid.forEach(p => {
+          if (p.images.length > 0) preloadImages([cardUrl(p.images[0])])
+        })
         valid.forEach(p => preloadImages(p.images.map(thumbUrl)))
       }, 0)
 
@@ -309,8 +312,9 @@ const Portfolio = () => {
                 ? <img
                     src={cardUrl(project.images[0])}
                     alt={project.title}
-                    loading="lazy"
-                    decoding="async"
+                    loading={idx < 6 ? 'eager' : 'lazy'}
+                    decoding={idx < 6 ? 'sync' : 'async'}
+                    fetchPriority={idx < 6 ? 'high' : 'auto'}
                     onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = s3Url(project.images[0]) }}
                   />
                 : <div className="image-placeholder" />}

@@ -116,8 +116,8 @@ async function generateAndUploadThumb(imageKey) {
 }
 
 async function generateAndUploadCard(imageKey) {
-  // Convert projects/<slug>/images/<file> → projects/<slug>/card/<file>
-  const cardKey = imageKey.replace('/images/', '/card/')
+  // Always output WebP for card images — same visual quality, ~35% smaller
+  const cardKey = imageKey.replace('/images/', '/card/').replace(/\.(jpe?g|png|gif)$/i, '.webp')
 
   if (!FORCE && await keyExists(cardKey)) {
     console.log(`  ⏭  card exists: ${cardKey}`)
@@ -128,29 +128,16 @@ async function generateAndUploadCard(imageKey) {
   if (!SUPPORTED_EXTS.has(ext)) return
 
   const buf = await downloadToBuffer(imageKey)
-  let pipeline = sharp(buf).resize({ width: CARD_WIDTH, withoutEnlargement: true })
-
-  let contentType = 'image/jpeg'
-  let outputBuf
-  if (ext === '.png') {
-    outputBuf = await pipeline.png({ quality: CARD_QUALITY }).toBuffer()
-    contentType = 'image/png'
-  } else if (ext === '.webp') {
-    outputBuf = await pipeline.webp({ quality: CARD_QUALITY }).toBuffer()
-    contentType = 'image/webp'
-  } else if (ext === '.gif') {
-    outputBuf = await pipeline.gif().toBuffer()
-    contentType = 'image/gif'
-  } else {
-    outputBuf = await pipeline.jpeg({ quality: CARD_QUALITY }).toBuffer()
-    contentType = 'image/jpeg'
-  }
+  const outputBuf = await sharp(buf)
+    .resize({ width: CARD_WIDTH, withoutEnlargement: true })
+    .webp({ quality: CARD_QUALITY })
+    .toBuffer()
 
   await s3.send(new PutObjectCommand({
     Bucket: BUCKET,
     Key: cardKey,
     Body: outputBuf,
-    ContentType: contentType,
+    ContentType: 'image/webp',
     CacheControl: 'public, max-age=31536000, immutable',
   }))
 
