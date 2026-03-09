@@ -89,14 +89,14 @@
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: #fff; /* make subtitle text white */
+  color: #f26501;
   margin: 0;
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .hero-role {
   font-size: 0.78rem;
-  color: #8c8c8c;
+  color: #fff; /* switched from gray to white */
   letter-spacing: 0.03em;
   margin: 0;
   line-height: 0.7; /* remove below-baseline half-leading so flex-end aligns flush */
@@ -443,7 +443,7 @@
   .hero-shot { width: 84px; height: 84px; }
   .hero-title { font-size: 1rem; }
   .hero-subtitle { font-size: 0.72rem; }
-  .hero-role { font-size: 0.64rem; color: #b0b0b0; text-shadow: 0 1px 4px rgba(0,0,0,0.7); }
+  .hero-role { font-size: 0.64rem; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.7); }
 
   /* when layout is narrow/vertical, minimap cart should be decorative only */
   .card-minimap { cursor: default; pointer-events: none; }
