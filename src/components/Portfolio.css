@@ -441,7 +441,7 @@
     content: '';
     position: absolute;
     inset: -0.5rem -1rem;
-    background: rgba(0, 0, 0, 0.30);
+    background: rgba(0, 0, 0, 0.35);
     border-radius: 50%;
     filter: blur(18px);
     z-index: -1;
