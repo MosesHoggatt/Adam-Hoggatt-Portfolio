@@ -16,16 +16,17 @@ import { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand, Hea
 import sharp from 'sharp'
 import path from 'path'
 
-const [,, BUCKET, REGION = 'us-east-1'] = process.argv
+const [,, BUCKET, REGION = 'us-east-1', FLAG] = process.argv
 if (!BUCKET) {
-  console.error('Usage: node generate-thumbnails.mjs <bucket-name> [region]')
+  console.error('Usage: node generate-thumbnails.mjs <bucket-name> [region] [--force]')
   process.exit(1)
 }
+const FORCE = FLAG === '--force'
 
 const s3 = new S3Client({ region: REGION })
 
-const THUMB_WIDTH = 400
-const THUMB_QUALITY = 70
+const THUMB_WIDTH = 200
+const THUMB_QUALITY = 65
 
 const SUPPORTED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif'])
 
@@ -68,7 +69,7 @@ async function generateAndUploadThumb(imageKey) {
   // Convert projects/<slug>/images/<file> → projects/<slug>/thumbnails/<file>
   const thumbKey = imageKey.replace('/images/', '/thumbnails/')
 
-  if (await keyExists(thumbKey)) {
+  if (!FORCE && await keyExists(thumbKey)) {
     console.log(`  ⏭  thumbnail exists: ${thumbKey}`)
     return
   }
@@ -125,7 +126,7 @@ async function generateAndUploadThumb(imageKey) {
   for (const key of imageKeys) {
     try {
       const thumbKey = key.replace('/images/', '/thumbnails/')
-      if (await keyExists(thumbKey)) {
+      if (!FORCE && await keyExists(thumbKey)) {
         skipped++
         console.log(`  ⏭  ${thumbKey}`)
       } else {

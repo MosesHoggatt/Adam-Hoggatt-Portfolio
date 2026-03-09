@@ -31,9 +31,25 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  /* Preload all full-res images for this level on mount */
+  /* Preload all full-res images in priority order:
+     1. Current image
+     2. Minimap
+     3. Outward from current index, accounting for wraparound */
   useEffect(() => {
-    images.forEach((src) => {
+    const n = images.length
+    if (n === 0) return
+
+    const ordered = [images[activeIndex]]
+    if (minimapUrl) ordered.push(minimapUrl)
+
+    for (let offset = 1; offset < n; offset++) {
+      const next = (activeIndex + offset) % n
+      const prev = (activeIndex - offset + n) % n
+      ordered.push(images[next])
+      if (prev !== next) ordered.push(images[prev])
+    }
+
+    ordered.forEach((src) => {
       const img = new Image()
       img.src = src
     })
@@ -114,7 +130,7 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
                       className={`lb-thumb${!showingMinimap && i === activeIndex ? ' lb-thumb-active' : ''}`}
                       onClick={() => { setShowingMinimap(false); setActiveIndex(i) }}
                     >
-                      <img src={url} alt={`View ${i + 1}`} loading="lazy" />
+                      <img src={url} alt={`View ${i + 1}`} />
                     </button>
                   ))}
                 </div>

@@ -13,6 +13,11 @@ const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S
 const s3Url = (path) => `${S3_BASE}/${path}`
 const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
 
+/** Preload a list of URLs into the browser cache without blocking render */
+function preloadImages(urls) {
+  urls.forEach(url => { const img = new Image(); img.src = url })
+}
+
 const shortName = (str) => str.replace('Call of Duty: ', '')
 
 /* Parse markdown-style links [text](url) in a string and return React elements */
@@ -104,6 +109,12 @@ const Portfolio = () => {
       const valid = loaded
         .filter(Boolean)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
+
+      // Kick off background thumbnail preload for all projects immediately
+      // so thumbnails are cached before the user opens any lightbox
+      setTimeout(() => {
+        valid.forEach(p => preloadImages(p.images.map(thumbUrl)))
+      }, 0)
 
       // 4. Build category filter list
       const catSet = new Set(valid.flatMap(p => p.categories))
@@ -276,6 +287,11 @@ const Portfolio = () => {
             key={project.slug}
             className="project-card"
             onClick={() => { setLightboxInitialMinimap(false); setLightboxIndex(idx) }}
+            onMouseEnter={() => {
+              preloadImages(project.images.map(thumbUrl))
+              preloadImages(project.images.map(s3Url))
+              if (project.minimap) preloadImages([s3Url(project.minimap)])
+            }}
             role="button"
             tabIndex={0}
             onKeyDown={e => e.key === 'Enter' && (setLightboxInitialMinimap(false), setLightboxIndex(idx))}

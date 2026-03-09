@@ -46,8 +46,8 @@ async function keyExists(key) {
   }
 }
 
-const THUMB_WIDTH = 400
-const THUMB_QUALITY = 70
+const THUMB_WIDTH = 200
+const THUMB_QUALITY = 65
 const SUPPORTED_IMG_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp'])
 
 async function uploadThumb(localPath, s3Key) {
