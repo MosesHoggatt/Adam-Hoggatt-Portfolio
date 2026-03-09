@@ -438,6 +438,9 @@
   .hero-subtitle { font-size: 0.72rem; }
   .hero-role { font-size: 0.64rem; color: #b0b0b0; text-shadow: 0 1px 4px rgba(0,0,0,0.7); }
 
+  /* when layout is narrow/vertical, minimap cart should be decorative only */
+  .card-minimap { cursor: default; pointer-events: none; }
+
   .hero-text::before {
     content: '';
     position: absolute;

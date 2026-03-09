@@ -14,6 +14,21 @@ const s3Url = (path) => `${S3_BASE}/${path}`
 const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
 const cardUrl  = (path) => s3Url(path.replace('/images/', '/card/').replace(/\.(jpe?g|png|gif)$/i, '.webp'))
 
+// simple hook for media queries; returns true/false and updates on resize
+function useMediaQuery(query) {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia(query).matches
+  })
+  useEffect(() => {
+    const m = window.matchMedia(query)
+    const handler = (e) => setMatches(e.matches)
+    m.addListener(handler)
+    return () => m.removeListener(handler)
+  }, [query])
+  return matches
+}
+
 /** Preload a list of URLs into the browser cache without blocking render.
  *  Returns the Image objects so callers can keep them alive (prevent GC cancellation). */
 const _preloadStore = []
@@ -60,6 +75,9 @@ const Portfolio = () => {
   const [sortOrder, setSortOrder] = useState('date-desc')
   const [profile, setProfile] = useState(null)
   const [showBioModal, setShowBioModal] = useState(false)
+
+  // detect narrow/portrait layout; when true we treat the interface as "vertical"
+  const isVerticalLayout = useMediaQuery('(max-width: 600px)')
 
   /* Lock body scroll while bio modal is open */
   useEffect(() => {
@@ -345,11 +363,15 @@ const Portfolio = () => {
               {project.minimap && (
                 <div
                   className="card-minimap"
-                  onClick={e => { e.stopPropagation(); setLightboxInitialMinimap(true); setLightboxIndex(idx) }}
-                  title="View minimap"
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={e => e.key === 'Enter' && (e.stopPropagation(), setLightboxInitialMinimap(true), setLightboxIndex(idx))}
+                  {...(isVerticalLayout
+                    ? { style: { cursor: 'default', pointerEvents: 'none' } }
+                    : {
+                        onClick: e => { e.stopPropagation(); setLightboxInitialMinimap(true); setLightboxIndex(idx) },
+                        title: 'View minimap',
+                        role: 'button',
+                        tabIndex: 0,
+                        onKeyDown: e => e.key === 'Enter' && (e.stopPropagation(), setLightboxInitialMinimap(true), setLightboxIndex(idx)),
+                      })}
                 >
                   <img src={s3Url(project.minimap)} alt="Minimap" loading="lazy" decoding="async" />
                 </div>
