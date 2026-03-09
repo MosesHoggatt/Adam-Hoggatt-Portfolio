@@ -119,47 +119,6 @@
   user-select: none;
 }
 
-/* ── Two-layer image stack: blurred thumbnail bg + full-res fg ── */
-.lb-image-stack {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  min-width: 0;
-  width: 100%;
-  overflow: hidden;
-}
-
-/* Blurred thumbnail — fills stack, always renders as placeholder */
-.lb-image-area .lb-thumb-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: blur(14px);
-  transform: scale(1.08);
-  border-radius: 0;
-  user-select: none;
-}
-
-/* Full-res overlay — fades in when loaded */
-.lb-image-area .lb-full-fg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: 2px;
-  user-select: none;
-  opacity: 0;
-  z-index: 1;
-}
-
-.lb-image-area .lb-full-fg.lb-full-loaded {
-  opacity: 1;
-  transition: opacity 0.18s ease;
-}
-
 /* ── Nav arrows ───────────────────────────────────────────────── */
 .lb-nav {
   position: absolute;
@@ -391,8 +350,6 @@
     max-height: 100%;
     object-fit: cover;
   }
-
-  .lb-image-area .lb-full-fg { object-fit: cover; }
 
   .lb-sidebar {
     width: 100%;

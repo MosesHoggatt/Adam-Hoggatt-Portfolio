@@ -13,7 +13,6 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
   const minimapUrl = project?.minimap ? s3Url(project.minimap) : null
   const [activeIndex, setActiveIndex] = useState(0)
   const [showingMinimap, setShowingMinimap] = useState(initialShowMinimap)
-  const [loadedSrc, setLoadedSrc] = useState(null)
   const thumbsRef = useRef(null)
   const prevProjectRef = useRef(project)
   const preloadCache = useRef([])
@@ -75,11 +74,6 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex])
 
-  /* Reset loaded state whenever we navigate to a new image */
-  useEffect(() => {
-    setLoadedSrc(null)
-  }, [activeIndex, project])
-
   /* Scroll active thumb into view whenever index changes */
   useEffect(() => {
     if (!thumbsRef.current) return
@@ -103,12 +97,7 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
 
   if (!project) return null
 
-  // Synchronously check if the full image is already in browser cache so
-  // preloaded images show instantly with no placeholder flash.
-  const fullImageCached = !showingMinimap && images[activeIndex]
-    ? (() => { const p = new Image(); p.src = images[activeIndex]; return p.complete })()
-    : false
-  const showFull = fullImageCached || loadedSrc === images[activeIndex]
+  const activeUrl = showingMinimap ? minimapUrl : (images[activeIndex] || null)
 
   return (
     <div className="lb-backdrop" onClick={onClose}>
@@ -133,25 +122,9 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
                 )}
 
                 <div className="lb-image-and-counter">
-                  {showingMinimap
-                    ? (minimapUrl
-                        ? <img src={minimapUrl} alt={`${project.title} minimap`} />
-                        : <div className="lb-no-image">No image available</div>)
-                    : images[activeIndex]
-                      ? <div className="lb-image-stack">
-                          {/* Blurred thumbnail shown instantly as placeholder */}
-                          <img className="lb-thumb-bg" src={thumbnails[activeIndex]} alt="" aria-hidden="true" />
-                          {/* Full-res image fades in when loaded */}
-                          <img
-                            key={images[activeIndex]}
-                            className={`lb-full-fg${showFull ? ' lb-full-loaded' : ''}`}
-                            src={images[activeIndex]}
-                            alt={project.title}
-                            onLoad={(e) => setLoadedSrc(e.currentTarget.src)}
-                          />
-                        </div>
-                      : <div className="lb-no-image">No image available</div>
-                  }
+                  {activeUrl
+                    ? <img src={activeUrl} alt={project.title} />
+                    : <div className="lb-no-image">No image available</div>}
                   {!showingMinimap && images.length > 0 && (
                     <p className="lb-counter">{activeIndex + 1} / {images.length}</p>
                   )}
