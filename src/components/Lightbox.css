@@ -329,14 +329,12 @@
 
   .lb-image-frame { padding: 0; flex: 0 0 auto; }
   .lb-image-area {
-    max-height: none;
+    max-height: 50vw;
     padding: 0;
-    height: auto;
   }
 
   .lb-image-area img {
     width: 100%;
-    height: auto;
     max-width: 100%;
     object-fit: contain;
   }
