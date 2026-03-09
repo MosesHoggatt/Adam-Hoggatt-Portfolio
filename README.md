@@ -111,6 +111,14 @@ The app will open at `http://localhost:5173`
 4. Verify your email (check spam folder)
 5. Sign in and start uploading projects
 
+## Development Workflow
+
+- **Always commit and push** your changes to the `dev` branch when you finish any modification.  
+  This repo uses `dev` as the active development branch; do not push directly to `main`/`master` unless explicitly instructed.
+- Run `npm run build` to verify there are no compile errors before committing.
+- The site is static, so pushing to `dev` will make the new sources available for deployment pipelines.  
+- Use scripts in `scripts/` (e.g. `upload.mjs`, `generate-thumbnails.mjs`) as needed when adding or updating images.
+
 ## Project Structure
 
 ```
