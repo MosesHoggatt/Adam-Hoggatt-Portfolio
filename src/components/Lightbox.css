@@ -329,8 +329,14 @@
 
   .lb-image-frame { padding: 0; flex: 0 0 auto; }
   .lb-image-area {
-    max-height: 45vh;
+    max-height: 50vw;
     padding: 0 2.4rem;
+  }
+
+  .lb-image-area img {
+    width: 100%;
+    max-width: 100%;
+    object-fit: contain;
   }
 
   .lb-sidebar {
@@ -349,7 +355,21 @@
   .lb-thumb { width: 56px; flex-basis: 56px; }
   .lb-thumbs { max-height: 72px; padding: 0.35rem; gap: 0.25rem; }
 
-  .lb-minimap-btn { min-height: 44px; }
+  .lb-minimap-btn {
+    min-height: 44px;
+    /* ~25vh tall, width matches the natural 16:9 or image aspect */
+    max-height: 25vh;
+    width: auto;
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lb-minimap-btn img {
+    max-height: 25vh;
+    width: auto;
+    object-fit: contain;
+  }
 
   .lb-footer { padding: 0.5rem 0.6rem; }
   .lb-footer-title { font-size: 0.78rem; }
