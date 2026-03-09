@@ -21,7 +21,8 @@
   background-size: min(1400px, 100%) auto;
   background-position: center center;
   background-repeat: no-repeat;
-  mask-image: linear-gradient(to right, transparent 0%, transparent 25%, black 65%, black 100%);
+  /* Gradient tied to viewport width: transparent left edge → 50% opacity at 50vw → opaque right */
+  mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 50%, black 70%, black 100%);
   z-index: 0;
 }
 
@@ -412,23 +413,23 @@
 }
 
 @media (max-width: 600px) {
-  /* Hero — banner fills the full header, fades from opaque top to transparent bottom */
+  /* Hero — keep horizontal layout; banner covers full width with same gradient */
   .hero::before {
     background-size: cover;
     background-position: center center;
-    mask-image: linear-gradient(to bottom, black 45%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 50%, black 70%, black 100%);
   }
   .hero-inner {
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    text-align: center;
-    gap: 0.8rem;
-    padding: 1.2rem 1rem;
+    text-align: left;
+    gap: 0.75rem;
+    padding: 0.9rem 0.75rem 0.9rem 0;
   }
-  .hero-shot { width: 120px; height: 120px; }
-  .hero-title { font-size: 1.3rem; }
-  .hero-subtitle { font-size: 0.8rem; }
-  .hero-role { font-size: 0.72rem; }
+  .hero-shot { width: 100px; height: 100px; }
+  .hero-title { font-size: 1.15rem; }
+  .hero-subtitle { font-size: 0.76rem; }
+  .hero-role { font-size: 0.68rem; }
 
   /* Filter buttons: always-square icons that scale to fill one row */
   .filter-btn:has(.filter-icon) {
@@ -516,8 +517,8 @@
 }
 
 @media (max-width: 380px) {
-  .hero-shot { width: 100px; height: 100px; }
-  .hero-title { font-size: 1.15rem; }
+  .hero-shot { width: 80px; height: 80px; }
+  .hero-title { font-size: 1rem; }
   .filter-bar { padding: 0.6rem 0.5rem; }
 }
 
