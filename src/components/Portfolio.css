@@ -430,12 +430,15 @@
   .hero-subtitle { font-size: 0.8rem; }
   .hero-role { font-size: 0.72rem; }
 
-  /* Filter buttons: switch to icon-only squares on mobile when an icon is available */
+  /* Filter buttons: switch to icon-only squares on mobile when an icon is available;
+     flex-shrink so they shrink proportionally to fit one row */
   .filter-btn:has(.filter-icon) {
     width: 44px;
     height: 44px;
+    min-width: 0;
+    flex: 1 1 0;
+    max-width: 52px;
     padding: 0.2rem;
-    flex-shrink: 0;
   }
   .filter-btn:has(.filter-icon) .filter-icon {
     display: block;
@@ -448,13 +451,13 @@
     display: none;
   }
 
-  /* Filter bar — stack vertically */
+  /* Filter bar — single row on mobile, icons scale to fit */
   .filter-bar {
-    flex-wrap: wrap;
-    overflow-x: visible;
-    justify-content: center;
-    padding: 0.75rem 1rem;
-    gap: 0.4rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding: 0.75rem 0.5rem;
+    gap: 0.3rem;
   }
   .filter-btn {
     font-size: 0.72rem;
