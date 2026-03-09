@@ -306,7 +306,13 @@ const Portfolio = () => {
           >
             <div className="card-image">
               {project.images.length > 0
-                ? <img src={cardUrl(project.images[0])} alt={project.title} loading="lazy" decoding="async" />
+                ? <img
+                    src={cardUrl(project.images[0])}
+                    alt={project.title}
+                    loading="lazy"
+                    decoding="async"
+                    onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = s3Url(project.images[0]) }}
+                  />
                 : <div className="image-placeholder" />}
             </div>
             <div className="card-body">
