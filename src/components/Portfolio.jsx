@@ -13,9 +13,15 @@ const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S
 const s3Url = (path) => `${S3_BASE}/${path}`
 const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
 
-/** Preload a list of URLs into the browser cache without blocking render */
+/** Preload a list of URLs into the browser cache without blocking render.
+ *  Returns the Image objects so callers can keep them alive (prevent GC cancellation). */
+const _preloadStore = []
 function preloadImages(urls) {
-  urls.forEach(url => { const img = new Image(); img.src = url })
+  urls.forEach(url => {
+    const img = new Image()
+    img.src = url
+    _preloadStore.push(img) // prevent GC from cancelling in-flight requests
+  })
 }
 
 const shortName = (str) => str.replace('Call of Duty: ', '')

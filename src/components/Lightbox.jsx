@@ -15,6 +15,7 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
   const [showingMinimap, setShowingMinimap] = useState(initialShowMinimap)
   const thumbsRef = useRef(null)
   const prevProjectRef = useRef(project)
+  const preloadCache = useRef([])
 
   /* Reset index on project navigation (prev/next), but NOT on initial mount */
   useEffect(() => {
@@ -34,7 +35,8 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
   /* Preload all full-res images in priority order:
      1. Current image
      2. Minimap
-     3. Outward from current index, accounting for wraparound */
+     3. Outward from current index, accounting for wraparound
+     Store refs so the browser doesn't GC+cancel the requests. */
   useEffect(() => {
     const n = images.length
     if (n === 0) return
@@ -49,10 +51,12 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
       if (prev !== next) ordered.push(images[prev])
     }
 
-    ordered.forEach((src) => {
+    const imgs = ordered.map((src) => {
       const img = new Image()
       img.src = src
+      return img
     })
+    preloadCache.current = imgs // keep alive until lightbox unmounts
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
