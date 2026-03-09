@@ -430,15 +430,16 @@
   .hero-subtitle { font-size: 0.8rem; }
   .hero-role { font-size: 0.72rem; }
 
-  /* Filter buttons: switch to icon-only squares on mobile when an icon is available;
-     flex-shrink so they shrink proportionally to fit one row */
+  /* Filter buttons: always-square icons that scale to fill one row */
   .filter-btn:has(.filter-icon) {
-    width: 44px;
-    height: 44px;
-    min-width: 0;
     flex: 1 1 0;
+    min-width: 0;
     max-width: 52px;
+    aspect-ratio: 1;
+    width: auto;
+    height: auto;
     padding: 0.2rem;
+    box-sizing: border-box;
   }
   .filter-btn:has(.filter-icon) .filter-icon {
     display: block;
