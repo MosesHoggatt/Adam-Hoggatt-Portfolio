@@ -181,7 +181,7 @@
   align-items: stretch;
   max-width: 1400px;
   margin: 1.5rem auto 0;
-  padding: 0;
+  padding: 0 var(--hero-pt);
 }
 
 /* Sort dropdown — left side */
@@ -500,7 +500,7 @@
   /* Search bar — keep side by side on mobile, just tighten sizing */
   .search-bar {
     margin: 1rem auto 0;
-    padding: 0 0.75rem;
+    padding: 0 var(--hero-pt);
   }
   .sort-select {
     border-right: none;
