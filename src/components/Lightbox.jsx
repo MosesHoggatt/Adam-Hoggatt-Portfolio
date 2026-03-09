@@ -33,22 +33,22 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
   }, [])
 
   /* Preload all full-res images in priority order:
-     1. Current image
+     1. Image 0 (active index resets to 0 on project change)
      2. Minimap
-     3. Outward from current index, accounting for wraparound
-     Store refs so the browser doesn't GC+cancel the requests. */
+     3. Outward from index 0 with wraparound
+     Store refs so the browser doesn't GC+cancel the requests.
+     Re-runs when project changes so navigating prev/next map re-preloads. */
   useEffect(() => {
     const n = images.length
     if (n === 0) return
 
-    const ordered = [images[activeIndex]]
+    const ordered = [images[0]]
     if (minimapUrl) ordered.push(minimapUrl)
 
     for (let offset = 1; offset < n; offset++) {
-      const next = (activeIndex + offset) % n
-      const prev = (activeIndex - offset + n) % n
-      ordered.push(images[next])
-      if (prev !== next) ordered.push(images[prev])
+      ordered.push(images[offset % n])
+      const prev = (n - offset) % n
+      if (prev !== offset % n) ordered.push(images[prev])
     }
 
     const imgs = ordered.map((src) => {
@@ -56,9 +56,23 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
       img.src = src
       return img
     })
-    preloadCache.current = imgs // keep alive until lightbox unmounts
+    preloadCache.current = imgs
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [project])
+
+  /* Eagerly preload immediate neighbours whenever the active index changes,
+     so rapid navigation doesn't wait for the full background preload order. */
+  useEffect(() => {
+    const n = images.length
+    if (n === 0) return
+    const srcs = [
+      images[(activeIndex + 1) % n],
+      images[(activeIndex - 1 + n) % n],
+    ]
+    const imgs = srcs.map(src => { const img = new Image(); img.src = src; return img })
+    preloadCache.current = preloadCache.current.concat(imgs)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex])
 
   /* Scroll active thumb into view whenever index changes */
   useEffect(() => {

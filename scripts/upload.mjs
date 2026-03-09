@@ -92,6 +92,7 @@ async function uploadFile(localPath, s3Key) {
   const contentType = MIME[ext] || 'application/octet-stream'
   const body = fs.createReadStream(localPath)
 
+  const isImage = SUPPORTED_IMG_EXTS.has(ext)
   const upload = new Upload({
     client: s3,
     params: {
@@ -99,6 +100,7 @@ async function uploadFile(localPath, s3Key) {
       Key: s3Key,
       Body: body,
       ContentType: contentType,
+      ...(isImage ? { CacheControl: 'public, max-age=31536000, immutable' } : {}),
     },
   })
 
