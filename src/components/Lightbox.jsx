@@ -64,7 +64,7 @@ function cancelAll() {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextProject, onClose, initialShowMinimap = false }) => {
+const Lightbox = ({ project, prevProject, nextProject, projectIndex, totalProjects, onPrevProject, onNextProject, onClose, initialShowMinimap = false }) => {
   const imagePaths = project?.images || []
   const images = imagePaths.map(s3Url)
   const thumbnails = imagePaths.map(thumbUrl)
@@ -102,6 +102,8 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
       const back = (n - offset) % n
       if (back !== offset % n) ordered.push(images[back])
     }
+    if (prevProject?.images?.[0]) ordered.push(s3Url(prevProject.images[0]))
+    if (nextProject?.images?.[0]) ordered.push(s3Url(nextProject.images[0]))
     priorityLoad(ordered)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project])
