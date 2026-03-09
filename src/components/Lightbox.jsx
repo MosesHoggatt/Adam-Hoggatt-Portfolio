@@ -4,9 +4,12 @@ import './Lightbox.css'
 
 const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`
 const s3Url = (path) => `${S3_BASE}/${path}`
+const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
 
 const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextProject, onClose, initialShowMinimap = false }) => {
-  const images = (project?.images || []).map(s3Url)
+  const imagePaths = project?.images || []
+  const images = imagePaths.map(s3Url)
+  const thumbnails = imagePaths.map(thumbUrl)
   const minimapUrl = project?.minimap ? s3Url(project.minimap) : null
   const [activeIndex, setActiveIndex] = useState(0)
   const [showingMinimap, setShowingMinimap] = useState(initialShowMinimap)
@@ -26,6 +29,15 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
+  }, [])
+
+  /* Preload all full-res images for this level on mount */
+  useEffect(() => {
+    images.forEach((src) => {
+      const img = new Image()
+      img.src = src
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /* Scroll active thumb into view whenever index changes */
@@ -96,13 +108,13 @@ const Lightbox = ({ project, projectIndex, totalProjects, onPrevProject, onNextP
               {/* Thumbnail strip — below image area */}
               {images.length > 1 && (
                 <div className="lb-thumbs" ref={thumbsRef}>
-                  {images.map((url, i) => (
+                  {thumbnails.map((url, i) => (
                     <button
                       key={i}
                       className={`lb-thumb${!showingMinimap && i === activeIndex ? ' lb-thumb-active' : ''}`}
                       onClick={() => { setShowingMinimap(false); setActiveIndex(i) }}
                     >
-                      <img src={url} alt={`View ${i + 1}`} />
+                      <img src={url} alt={`View ${i + 1}`} loading="lazy" />
                     </button>
                   ))}
                 </div>

@@ -16,6 +16,7 @@ import fs from 'fs'
 import path from 'path'
 import { S3Client, PutObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
+import sharp from 'sharp'
 
 const [,, BUCKET, REGION = 'us-east-1'] = process.argv
 
@@ -42,6 +43,42 @@ async function keyExists(key) {
     return true
   } catch {
     return false
+  }
+}
+
+const THUMB_WIDTH = 400
+const THUMB_QUALITY = 70
+const SUPPORTED_IMG_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp'])
+
+async function uploadThumb(localPath, s3Key) {
+  const thumbKey = s3Key.replace('/images/', '/thumbnails/')
+  if (await keyExists(thumbKey)) {
+    console.log(`  ⏭  thumbnail exists: ${thumbKey}`)
+    return
+  }
+  const ext = path.extname(localPath).toLowerCase()
+  if (!SUPPORTED_IMG_EXTS.has(ext)) return
+
+  try {
+    let pipeline = sharp(localPath).resize({ width: THUMB_WIDTH, withoutEnlargement: true })
+    let buf, contentType
+    if (ext === '.png') {
+      buf = await pipeline.png({ quality: THUMB_QUALITY }).toBuffer()
+      contentType = 'image/png'
+    } else if (ext === '.webp') {
+      buf = await pipeline.webp({ quality: THUMB_QUALITY }).toBuffer()
+      contentType = 'image/webp'
+    } else {
+      buf = await pipeline.jpeg({ quality: THUMB_QUALITY }).toBuffer()
+      contentType = 'image/jpeg'
+    }
+    await s3.send(new PutObjectCommand({
+      Bucket: BUCKET, Key: thumbKey, Body: buf, ContentType: contentType,
+      CacheControl: 'public, max-age=31536000, immutable',
+    }))
+    console.log(`  ✓ thumbnail: ${thumbKey}`)
+  } catch (err) {
+    console.warn(`  ⚠ thumbnail failed: ${thumbKey}`, err.message)
   }
 }
 
@@ -119,6 +156,7 @@ async function uploadFile(localPath, s3Key) {
         const localPath = path.join(imagesDir, filename)
         const s3Key     = `projects/${slug}/images/${filename}`
         await uploadFile(localPath, s3Key)
+        await uploadThumb(localPath, s3Key)
       }
     }
   }

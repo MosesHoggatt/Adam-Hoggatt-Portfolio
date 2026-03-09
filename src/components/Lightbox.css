@@ -317,31 +317,39 @@
   .lb-panel {
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     border-radius: 0;
     border: none;
   }
-  .lb-main { flex-direction: column; }
+  .lb-main {
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 
-  .lb-image-frame { padding: 0; }
+  .lb-image-frame { padding: 0; flex: 0 0 auto; }
   .lb-image-area {
-    max-height: 40vh;
+    max-height: 45vh;
     padding: 0 2.4rem;
   }
 
   .lb-sidebar {
     width: 100%;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     border-left: none;
     border-top: 1px solid #2a2a2a;
     max-height: none;
     padding: 1rem;
+    overflow-y: visible;
   }
 
   .lb-title { font-size: 1.05rem; }
   .lb-desc { font-size: 0.8rem; }
 
-  .lb-thumb { width: 64px; flex-basis: 64px; }
-  .lb-thumbs { max-height: 80px; padding: 0.4rem; }
+  .lb-thumb { width: 56px; flex-basis: 56px; }
+  .lb-thumbs { max-height: 72px; padding: 0.35rem; gap: 0.25rem; }
+
+  .lb-minimap-btn { min-height: 44px; }
 
   .lb-footer { padding: 0.5rem 0.6rem; }
   .lb-footer-title { font-size: 0.78rem; }

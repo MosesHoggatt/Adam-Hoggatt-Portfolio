@@ -11,6 +11,7 @@ const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S
 // Convert an S3 storage path (e.g. "projects/raid/images/raid.jpg")
 // to a public HTTPS URL — no signing, no Cognito needed.
 const s3Url = (path) => `${S3_BASE}/${path}`
+const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
 
 const shortName = (str) => str.replace('Call of Duty: ', '')
 
@@ -81,7 +82,7 @@ const Portfolio = () => {
       const loaded = await Promise.all(
         jsonPaths.map(async (path) => {
           try {
-            const res = await fetch(s3Url(path), { cache: 'no-cache' })
+            const res = await fetch(s3Url(path))
             const data = await res.json()
 
             return {
@@ -113,7 +114,7 @@ const Portfolio = () => {
       // Seed with builtin defaults first
       Object.assign(meta, BUILTIN_CATEGORY_META)
       try {
-        const catMetaRes = await fetch(s3Url('projects/categories.json'), { cache: 'no-cache' })
+        const catMetaRes = await fetch(s3Url('projects/categories.json'))
         if (catMetaRes.ok) {
           const globalCats = await catMetaRes.json()
           // Respect admin-defined order from categories.json
@@ -155,7 +156,7 @@ const Portfolio = () => {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch(s3Url('profile/profile.json'), { cache: 'no-cache' })
+      const res = await fetch(s3Url('profile/profile.json'))
       if (res.ok) setProfile(await res.json())
     } catch {}
   }
@@ -195,6 +196,7 @@ const Portfolio = () => {
               className="hero-shot hero-shot-clickable"
               onClick={() => setShowBioModal(true)}
               title="View bio"
+              fetchPriority="high"
             />
             <div className="hero-text">
               <h1 className="hero-title">Adam Hoggatt</h1>
@@ -280,7 +282,7 @@ const Portfolio = () => {
           >
             <div className="card-image">
               {project.images.length > 0
-                ? <img src={s3Url(project.images[0])} alt={project.title} loading="lazy" />
+                ? <img src={s3Url(project.images[0])} alt={project.title} loading="lazy" decoding="async" />
                 : <div className="image-placeholder" />}
             </div>
             <div className="card-body">
@@ -310,7 +312,7 @@ const Portfolio = () => {
                   tabIndex={0}
                   onKeyDown={e => e.key === 'Enter' && (e.stopPropagation(), setLightboxInitialMinimap(true), setLightboxIndex(idx))}
                 >
-                  <img src={s3Url(project.minimap)} alt="Minimap" loading="lazy" />
+                  <img src={s3Url(project.minimap)} alt="Minimap" loading="lazy" decoding="async" />
                 </div>
               )}
             </div>

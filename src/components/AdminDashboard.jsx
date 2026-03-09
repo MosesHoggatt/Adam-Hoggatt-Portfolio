@@ -8,6 +8,58 @@ import './AdminDashboard.css'
 
 const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`
 const s3Url = (path) => `${S3_BASE}/${path}`
+
+const THUMB_MAX_WIDTH = 400
+const THUMB_QUALITY = 0.7
+
+/** Generate a compressed thumbnail Blob from a File or Blob using canvas */
+function generateThumbnail(file) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, THUMB_MAX_WIDTH / img.width)
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, w, h)
+      canvas.toBlob(
+        (blob) => { URL.revokeObjectURL(img.src); resolve(blob) },
+        'image/jpeg',
+        THUMB_QUALITY,
+      )
+    }
+    img.onerror = () => { URL.revokeObjectURL(img.src); resolve(null) }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+/** Generate a thumbnail from an S3 URL (for existing images) */
+function generateThumbnailFromUrl(url) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const scale = Math.min(1, THUMB_MAX_WIDTH / img.width)
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, w, h)
+      canvas.toBlob(
+        (blob) => resolve(blob),
+        'image/jpeg',
+        THUMB_QUALITY,
+      )
+    }
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+}
 const getIconSrc = (icon) => {
   if (!icon) return null
   return CATEGORY_ICON_MAP[icon] || s3Url(icon)
@@ -323,6 +375,17 @@ const AdminDashboard = () => {
         let resolvedPath = null
         if (item.path) {
           resolvedPath = item.path
+          // Ensure thumbnail exists for existing images
+          const thumbPath = resolvedPath.replace('/images/', '/thumbnails/')
+          try {
+            const headRes = await fetch(s3Url(thumbPath), { method: 'HEAD' })
+            if (!headRes.ok) {
+              const thumbBlob = await generateThumbnailFromUrl(s3Url(resolvedPath))
+              if (thumbBlob) {
+                await uploadData({ path: thumbPath, data: thumbBlob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
+              }
+            }
+          } catch { /* thumbnail generation is best-effort */ }
         } else if (item.file) {
           const fileName = item.file.name.replace(/\s+/g, '-')
           const path = `projects/${slug}/images/${fileName}`
@@ -331,6 +394,14 @@ const AdminDashboard = () => {
             data: item.file,
             options: { contentType: item.file.type },
           }).result
+          // Generate and upload thumbnail
+          try {
+            const thumbBlob = await generateThumbnail(item.file)
+            if (thumbBlob) {
+              const thumbPath = `projects/${slug}/thumbnails/${fileName}`
+              await uploadData({ path: thumbPath, data: thumbBlob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
+            }
+          } catch { /* thumbnail generation is best-effort */ }
           resolvedPath = path
         }
         if (resolvedPath) {
