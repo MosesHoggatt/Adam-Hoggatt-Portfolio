@@ -420,7 +420,7 @@
   .hero::before {
     background-size: cover;
     background-position: center center;
-    mask-image: linear-gradient(to right, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 58%, black 80%, black 100%);
+    mask-image: linear-gradient(to right, transparent 0%, transparent 20%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.75) 65%, black 82%, black 100%);
   }
   .hero-inner {
     flex-direction: row;
