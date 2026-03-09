@@ -9,7 +9,7 @@ const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
 // ── Global image loader ───────────────────────────────────────────────────────
 // Single pool shared across every project. Max 6 concurrent downloads.
 // Already-downloaded URLs are remembered so they're never re-fetched.
-const MAX_SLOTS = 6
+const MAX_SLOTS = 10
 const loaded  = new Set()   // completed URLs (in browser cache)
 let   active  = []          // Image objects currently downloading
 let   pending = []          // URLs waiting for a free slot
@@ -64,7 +64,7 @@ function cancelAll() {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-const Lightbox = ({ project, prevProject, nextProject, projectIndex, totalProjects, onPrevProject, onNextProject, onClose, initialShowMinimap = false }) => {
+const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevProject, onNextProject, onClose, initialShowMinimap = false }) => {
   const imagePaths = project?.images || []
   const images = imagePaths.map(s3Url)
   const thumbnails = imagePaths.map(thumbUrl)
@@ -102,8 +102,14 @@ const Lightbox = ({ project, prevProject, nextProject, projectIndex, totalProjec
       const back = (n - offset) % n
       if (back !== offset % n) ordered.push(images[back])
     }
-    if (prevProject?.images?.[0]) ordered.push(s3Url(prevProject.images[0]))
-    if (nextProject?.images?.[0]) ordered.push(s3Url(nextProject.images[0]))
+    // Buffer 3 adjacent projects in each direction
+    const BUFFER = 3
+    for (let d = 1; d <= BUFFER; d++) {
+      const prev = allProjects?.[projectIndex - d]
+      const next = allProjects?.[projectIndex + d]
+      if (prev?.images?.[0]) ordered.push(s3Url(prev.images[0]))
+      if (next?.images?.[0]) ordered.push(s3Url(next.images[0]))
+    }
     priorityLoad(ordered)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project])

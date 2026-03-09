@@ -361,8 +361,7 @@ const Portfolio = () => {
       {lightboxIndex !== null && (
         <Lightbox
           project={filteredProjects[lightboxIndex]}
-          prevProject={lightboxIndex > 0 ? filteredProjects[lightboxIndex - 1] : null}
-          nextProject={lightboxIndex < filteredProjects.length - 1 ? filteredProjects[lightboxIndex + 1] : null}
+          allProjects={filteredProjects}
           projectIndex={lightboxIndex}
           totalProjects={filteredProjects.length}
           onPrevProject={() => setLightboxIndex(i => Math.max(i - 1, 0))}
