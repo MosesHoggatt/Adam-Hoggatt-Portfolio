@@ -1,4 +1,8 @@
 /* ── Base ─────────────────────────────────────────────────────── */
+:root {
+  --hero-pt: 1.2rem; /* spacing from page edge to hero image — shared by grid & search bar */
+}
+
 .portfolio {
   min-height: 100vh;
   background-color: #111;
@@ -32,7 +36,6 @@
 }
 
 .hero-inner {
-  --hero-pt: 1.2rem; /* distance from top of page to image */
   display: flex;
   align-items: flex-end;  /* align bottom of text block with bottom of profile icon */
   gap: 1.5rem;
@@ -419,6 +422,8 @@
 }
 
 @media (max-width: 600px) {
+  :root { --hero-pt: 0.9rem; }
+
   /* Hero — keep horizontal layout; darker background, gradient shifted right */
   .hero {
     background-color: #0d0d0d;
@@ -429,7 +434,6 @@
     mask-image: linear-gradient(to right, transparent 0%, transparent 10%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.7) 78%, rgba(0,0,0,0.8) 90%, rgba(0,0,0,0.8) 100%);
   }
   .hero-inner {
-    --hero-pt: 0.9rem;
     flex-direction: row;
     align-items: flex-end;  /* bottom-align text against profile icon */
     text-align: left;
