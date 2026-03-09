@@ -12,6 +12,9 @@ const s3Url = (path) => `${S3_BASE}/${path}`
 const THUMB_MAX_WIDTH = 400
 const THUMB_QUALITY = 0.7
 
+const CARD_MAX_WIDTH = 800
+const CARD_QUALITY = 0.82
+
 /** Generate a compressed thumbnail Blob from a File or Blob using canvas */
 function generateThumbnail(file) {
   return new Promise((resolve) => {
@@ -29,6 +32,30 @@ function generateThumbnail(file) {
         (blob) => { URL.revokeObjectURL(img.src); resolve(blob) },
         'image/jpeg',
         THUMB_QUALITY,
+      )
+    }
+    img.onerror = () => { URL.revokeObjectURL(img.src); resolve(null) }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+/** Generate a card-size image Blob from a File or Blob using canvas */
+function generateCardImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, CARD_MAX_WIDTH / img.width)
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, w, h)
+      canvas.toBlob(
+        (blob) => { URL.revokeObjectURL(img.src); resolve(blob) },
+        'image/jpeg',
+        CARD_QUALITY,
       )
     }
     img.onerror = () => { URL.revokeObjectURL(img.src); resolve(null) }
@@ -54,6 +81,31 @@ function generateThumbnailFromUrl(url) {
         (blob) => resolve(blob),
         'image/jpeg',
         THUMB_QUALITY,
+      )
+    }
+    img.onerror = () => resolve(null)
+    img.src = url
+  })
+}
+
+/** Generate a card-size image from an S3 URL (for existing images) */
+function generateCardImageFromUrl(url) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const scale = Math.min(1, CARD_MAX_WIDTH / img.width)
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, w, h)
+      canvas.toBlob(
+        (blob) => resolve(blob),
+        'image/jpeg',
+        CARD_QUALITY,
       )
     }
     img.onerror = () => resolve(null)
@@ -375,17 +427,25 @@ const AdminDashboard = () => {
         let resolvedPath = null
         if (item.path) {
           resolvedPath = item.path
-          // Ensure thumbnail exists for existing images
+          // Ensure small thumbnail + card image exist for existing images
           const thumbPath = resolvedPath.replace('/images/', '/thumbnails/')
+          const cardPath  = resolvedPath.replace('/images/', '/card/')
           try {
-            const headRes = await fetch(s3Url(thumbPath), { method: 'HEAD' })
-            if (!headRes.ok) {
-              const thumbBlob = await generateThumbnailFromUrl(s3Url(resolvedPath))
-              if (thumbBlob) {
-                await uploadData({ path: thumbPath, data: thumbBlob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
+            const [thumbRes, cardRes] = await Promise.all([
+              fetch(s3Url(thumbPath), { method: 'HEAD' }),
+              fetch(s3Url(cardPath),  { method: 'HEAD' }),
+            ])
+            if (!thumbRes.ok || !cardRes.ok) {
+              const blob = await generateCardImageFromUrl(s3Url(resolvedPath))
+              if (!thumbRes.ok) {
+                const thumbBlob = await generateThumbnailFromUrl(s3Url(resolvedPath))
+                if (thumbBlob) await uploadData({ path: thumbPath, data: thumbBlob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
+              }
+              if (!cardRes.ok && blob) {
+                await uploadData({ path: cardPath, data: blob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
               }
             }
-          } catch { /* thumbnail generation is best-effort */ }
+          } catch { /* best-effort */ }
         } else if (item.file) {
           const fileName = item.file.name.replace(/\s+/g, '-')
           const path = `projects/${slug}/images/${fileName}`
@@ -394,14 +454,21 @@ const AdminDashboard = () => {
             data: item.file,
             options: { contentType: item.file.type },
           }).result
-          // Generate and upload thumbnail
+          // Generate and upload small thumbnail + card image
           try {
-            const thumbBlob = await generateThumbnail(item.file)
+            const [thumbBlob, cardBlob] = await Promise.all([
+              generateThumbnail(item.file),
+              generateCardImage(item.file),
+            ])
             if (thumbBlob) {
               const thumbPath = `projects/${slug}/thumbnails/${fileName}`
               await uploadData({ path: thumbPath, data: thumbBlob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
             }
-          } catch { /* thumbnail generation is best-effort */ }
+            if (cardBlob) {
+              const cardPath = `projects/${slug}/card/${fileName}`
+              await uploadData({ path: cardPath, data: cardBlob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
+            }
+          } catch { /* best-effort */ }
           resolvedPath = path
         }
         if (resolvedPath) {

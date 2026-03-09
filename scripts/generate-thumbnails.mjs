@@ -28,6 +28,9 @@ const s3 = new S3Client({ region: REGION })
 const THUMB_WIDTH = 200
 const THUMB_QUALITY = 65
 
+const CARD_WIDTH = 800
+const CARD_QUALITY = 82
+
 const SUPPORTED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif'])
 
 async function keyExists(key) {
@@ -112,6 +115,49 @@ async function generateAndUploadThumb(imageKey) {
   console.log(`  ✓ ${thumbKey} (${ratio}% of original)`)
 }
 
+async function generateAndUploadCard(imageKey) {
+  // Convert projects/<slug>/images/<file> → projects/<slug>/card/<file>
+  const cardKey = imageKey.replace('/images/', '/card/')
+
+  if (!FORCE && await keyExists(cardKey)) {
+    console.log(`  ⏭  card exists: ${cardKey}`)
+    return
+  }
+
+  const ext = path.extname(imageKey).toLowerCase()
+  if (!SUPPORTED_EXTS.has(ext)) return
+
+  const buf = await downloadToBuffer(imageKey)
+  let pipeline = sharp(buf).resize({ width: CARD_WIDTH, withoutEnlargement: true })
+
+  let contentType = 'image/jpeg'
+  let outputBuf
+  if (ext === '.png') {
+    outputBuf = await pipeline.png({ quality: CARD_QUALITY }).toBuffer()
+    contentType = 'image/png'
+  } else if (ext === '.webp') {
+    outputBuf = await pipeline.webp({ quality: CARD_QUALITY }).toBuffer()
+    contentType = 'image/webp'
+  } else if (ext === '.gif') {
+    outputBuf = await pipeline.gif().toBuffer()
+    contentType = 'image/gif'
+  } else {
+    outputBuf = await pipeline.jpeg({ quality: CARD_QUALITY }).toBuffer()
+    contentType = 'image/jpeg'
+  }
+
+  await s3.send(new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: cardKey,
+    Body: outputBuf,
+    ContentType: contentType,
+    CacheControl: 'public, max-age=31536000, immutable',
+  }))
+
+  const ratio = ((outputBuf.length / buf.length) * 100).toFixed(0)
+  console.log(`  ✓ ${cardKey} (${ratio}% of original)`)
+}
+
 ;(async () => {
   console.log(`Generating thumbnails for s3://${BUCKET} (${REGION})\n`)
 
@@ -126,21 +172,19 @@ async function generateAndUploadThumb(imageKey) {
   for (const key of imageKeys) {
     try {
       const thumbKey = key.replace('/images/', '/thumbnails/')
-      if (!FORCE && await keyExists(thumbKey)) {
-        skipped++
-        console.log(`  ⏭  ${thumbKey}`)
-      } else {
-        await generateAndUploadThumb(key)
-        created++
-      }
+      const cardKey  = key.replace('/images/', '/card/')
+      const thumbExists = !FORCE && await keyExists(thumbKey)
+      const cardExists  = !FORCE && await keyExists(cardKey)
+
+      if (thumbExists) { skipped++; console.log(`  ⏭  ${thumbKey}`) }
+      else { await generateAndUploadThumb(key); created++ }
+
+      if (cardExists) { console.log(`  ⏭  ${cardKey}`) }
+      else { await generateAndUploadCard(key); created++ }
     } catch (err) {
       console.error(`  ✗ Failed: ${key}`, err.message)
     }
   }
-
-  // Also generate thumbnails for minimap images
-  const minimapKeys = allKeys.filter(k => k.match(/projects\/[^/]+\.(jpg|jpeg|png|webp)$/i))
-  // Minimaps are stored at root level like projects/<slug>/minimap.jpg — skip for now, they're shown at small size anyway
 
   console.log(`\n✅  Done. Created: ${created}, Skipped: ${skipped}`)
 })()

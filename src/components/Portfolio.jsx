@@ -12,6 +12,7 @@ const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S
 // to a public HTTPS URL — no signing, no Cognito needed.
 const s3Url = (path) => `${S3_BASE}/${path}`
 const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
+const cardUrl  = (path) => s3Url(path.replace('/images/', '/card/'))
 
 /** Preload a list of URLs into the browser cache without blocking render.
  *  Returns the Image objects so callers can keep them alive (prevent GC cancellation). */
@@ -296,6 +297,7 @@ const Portfolio = () => {
             onMouseEnter={() => {
               preloadImages(project.images.map(thumbUrl))
               preloadImages(project.images.map(s3Url))
+              preloadImages([cardUrl(project.images[0])])
               if (project.minimap) preloadImages([s3Url(project.minimap)])
             }}
             role="button"
@@ -304,7 +306,7 @@ const Portfolio = () => {
           >
             <div className="card-image">
               {project.images.length > 0
-                ? <img src={s3Url(project.images[0])} alt={project.title} loading="lazy" decoding="async" />
+                ? <img src={cardUrl(project.images[0])} alt={project.title} loading="lazy" decoding="async" />
                 : <div className="image-placeholder" />}
             </div>
             <div className="card-body">
