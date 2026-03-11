@@ -1,0 +1,36 @@
+{
+    "AttachedPolicies": [
+        {
+            "PolicyName": "AmazonSSMReadOnlyAccess",
+            "PolicyArn": "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
+        },
+        {
+            "PolicyName": "IAMFullAccess",
+            "PolicyArn": "arn:aws:iam::aws:policy/IAMFullAccess"
+        },
+        {
+            "PolicyName": "CloudWatchLogsFullAccess",
+            "PolicyArn": "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+        },
+        {
+            "PolicyName": "AmazonSESFullAccess",
+            "PolicyArn": "arn:aws:iam::aws:policy/AmazonSESFullAccess"
+        },
+        {
+            "PolicyName": "AmazonS3FullAccess",
+            "PolicyArn": "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        },
+        {
+            "PolicyName": "AWSCloudFormationFullAccess",
+            "PolicyArn": "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
+        },
+        {
+            "PolicyName": "AWSLambda_FullAccess",
+            "PolicyArn": "arn:aws:iam::aws:policy/AWSLambda_FullAccess"
+        },
+        {
+            "PolicyName": "AdministratorAccess-Amplify",
+            "PolicyArn": "arn:aws:iam::aws:policy/AdministratorAccess-Amplify"
+        }
+    ]
+}

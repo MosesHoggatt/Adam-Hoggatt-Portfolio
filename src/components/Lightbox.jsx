@@ -3,7 +3,8 @@ import awsConfig from '../aws-exports'
 import './Lightbox.css'
 
 const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`
-const s3Url = (path) => `${S3_BASE}/${path}`
+const CDN_BASE = awsConfig.Storage.cdnBase || S3_BASE
+const s3Url = (path) => `${CDN_BASE}/${path}`
 const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
 
 // ── Lightweight preloader ─────────────────────────────────────────────────────

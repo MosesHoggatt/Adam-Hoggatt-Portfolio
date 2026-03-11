@@ -32,6 +32,8 @@ const awsconfig = {
       bucket: 'adam-hoggatt-portfolio-content',
       region: 'us-east-1',
     },
+    // CloudFront CDN for fast public reads (PriceClass_100: US/Canada/Europe)
+    cdnBase: 'https://d1hkp9aletiphg.cloudfront.net',
   },
 };
 

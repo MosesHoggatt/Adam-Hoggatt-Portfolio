@@ -7,10 +7,11 @@ import { CATEGORY_ICON_MAP, BUILTIN_CATEGORY_META } from '../categoryIcons'
 import './Portfolio.css'
 
 const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S3.region}.amazonaws.com`
+const CDN_BASE = awsConfig.Storage.cdnBase || S3_BASE
 
-// Convert an S3 storage path (e.g. "projects/raid/images/raid.jpg")
-// to a public HTTPS URL — no signing, no Cognito needed.
-const s3Url          = (path) => `${S3_BASE}/${path}`
+// Public reads go through CloudFront (fast edge cache).
+// Admin writes still hit S3 directly via Amplify uploadData.
+const s3Url          = (path) => `${CDN_BASE}/${path}`
 const thumbUrl       = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
 const cardUrl        = (path) => s3Url(path.replace('/images/', '/card/').replace(/\.(jpe?g|png|gif)$/i, '.webp'))
 // 400px WebP thumbnail sized for the card minimap slot (~150-350 CSS px, covers 2× retina)
@@ -88,45 +89,46 @@ const Portfolio = () => {
       setLoading(true)
       setError(null)
 
-      // 1. Fetch the static index — one public GET, no Cognito/Amplify involved
-      const indexRes = await fetch(s3Url('projects/index.json'), { cache: 'no-cache' })
-      if (!indexRes.ok) throw new Error(`Index fetch failed: ${indexRes.status}`)
-      const jsonPaths = await indexRes.json()
+      // 1. Fetch the merged all-projects manifest — ONE request instead of 43.
+      //    Falls back to the old index + individual fetch pattern if all.json
+      //    hasn't been written yet (first deploy, before admin saves a project).
+      let valid
+      const allRes = await fetch(s3Url('projects/all.json'), { cache: 'no-cache' })
+      if (allRes.ok) {
+        const allData = await allRes.json()
+        valid = allData
+          .filter(Boolean)
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+      } else {
+        // Fallback: old two-step fetch for backwards compatibility
+        const indexRes = await fetch(s3Url('projects/index.json'), { cache: 'no-cache' })
+        if (!indexRes.ok) throw new Error(`Index fetch failed: ${indexRes.status}`)
+        const jsonPaths = await indexRes.json()
+        const loaded = await Promise.all(
+          jsonPaths.map(async (path) => {
+            try {
+              const res = await fetch(s3Url(path))
+              const data = await res.json()
+              return {
+                title: data.title || '', slug: data.slug || '',
+                description: data.description || '', date: data.date || '',
+                categories: Array.isArray(data.categories) ? data.categories : [],
+                images: Array.isArray(data.images) ? data.images : [],
+                minimap: data.minimap || null,
+              }
+            } catch (err) { console.warn('Failed to load project:', path, err); return null }
+          })
+        )
+        valid = loaded.filter(Boolean).sort((a, b) => new Date(b.date) - new Date(a.date))
+      }
 
-      if (jsonPaths.length === 0) {
+      if (valid.length === 0) {
         setProjects([])
         setLoading(false)
         return
       }
 
-      // 2. Fetch and parse each manifest — all public GETs in parallel
-      const loaded = await Promise.all(
-        jsonPaths.map(async (path) => {
-          try {
-            const res = await fetch(s3Url(path))
-            const data = await res.json()
-
-            return {
-              title: data.title || '',
-              slug: data.slug || '',
-              description: data.description || '',
-              date: data.date || '',
-              categories: Array.isArray(data.categories) ? data.categories : [],
-              images: Array.isArray(data.images) ? data.images : [],
-              minimap: data.minimap || null,
-            }
-          } catch (err) {
-            console.warn('Failed to load project:', path, err)
-            return null
-          }
-        })
-      )
-
-      const valid = loaded
-        .filter(Boolean)
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-
-      // 4. Build category filter list
+      // Build category filter list
       const catSet = new Set(valid.flatMap(p => p.categories))
       setProjects(valid)
 

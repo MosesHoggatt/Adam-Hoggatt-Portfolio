@@ -386,14 +386,29 @@ const AdminDashboard = () => {
      ════════════════════════════════════════════════════════════════ */
   const rebuildIndex = useCallback(async (updatedProjects) => {
     const paths = updatedProjects.map(p => `projects/${p.slug}.json`).sort()
-    await uploadData({
-      path: 'projects/index.json',
-      data: JSON.stringify(paths),
-      options: {
-        contentType: 'application/json',
-        metadata: { 'Cache-Control': 'no-cache, max-age=0' },
-      },
-    }).result
+    // Write index.json (legacy list of paths) AND all.json (merged manifests).
+    // all.json is what the portfolio reads — one fetch instead of 43.
+    const allPayload = updatedProjects.map(p => ({
+      title: p.title || '',
+      slug: p.slug || '',
+      description: p.description || '',
+      date: p.date || '',
+      categories: Array.isArray(p.categories) ? p.categories : [],
+      images: Array.isArray(p.images) ? p.images : [],
+      minimap: p.minimap || null,
+    }))
+    await Promise.all([
+      uploadData({
+        path: 'projects/index.json',
+        data: JSON.stringify(paths),
+        options: { contentType: 'application/json', metadata: { 'Cache-Control': 'no-cache, max-age=0' } },
+      }).result,
+      uploadData({
+        path: 'projects/all.json',
+        data: JSON.stringify(allPayload),
+        options: { contentType: 'application/json', metadata: { 'Cache-Control': 'no-cache, max-age=0' } },
+      }).result,
+    ])
   }, [])
 
   /* ════════════════════════════════════════════════════════════════
