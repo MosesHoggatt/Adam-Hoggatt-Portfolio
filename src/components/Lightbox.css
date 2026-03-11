@@ -137,50 +137,12 @@
   overflow: hidden;
 }
 
-/* Full-res: IN FLOW — provides container dimensions.
-   Invisible (opacity 0) until loaded, then instant/subtle fade. */
 .lb-img-full {
   display: block;
   max-width: 100%;
   max-height: 100%;
   width: auto;
   height: auto;
-  object-fit: contain;
-  border-radius: 2px;
-  user-select: none;
-  opacity: 0;
-  transition: opacity 0.12s ease;
-}
-.lb-img-full--visible {
-  opacity: 1;
-}
-
-/* Ghost: ALWAYS in DOM, opacity controlled by CSS class.
-   No element insertion on image switch = browser reuses decoded bitmap = zero-frame blink. */
-.lb-img-ghost {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: 2px;
-  user-select: none;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.12s ease;
-}
-.lb-img-ghost--visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* Thumbnail: absolute overlay, shown while full-res loads.
-   Removed once full-res is ready (conditional render). */
-.lb-img-placeholder {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
   object-fit: contain;
   border-radius: 2px;
   user-select: none;

@@ -34,19 +34,15 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
   const minimapUrl = project?.minimap ? s3Url(project.minimap) : null
   const [activeIndex, setActiveIndex] = useState(0)
   const [showingMinimap, setShowingMinimap] = useState(initialShowMinimap)
-  const [fullLoaded, setFullLoaded] = useState({})
-  // ghostSrc: last confirmed-loaded URL. Ghost <img> stays in DOM always;
-  // visibility toggled via CSS class — no element insertion = no decode delay = no blink.
-  const [ghostSrc, setGhostSrc] = useState(null)
+  // displayedSrc: the URL currently shown. Only changes when the new image is
+  // confirmed in browser memory (isReady or onload). src on the <img> element
+  // is never set to an unloaded URL, so the browser never blanks the display.
+  const [displayedSrc, setDisplayedSrc] = useState(null)
   const [showSpinner, setShowSpinner] = useState(false)
   const thumbsRef = useRef(null)
   const prevProjectRef = useRef(project)
+  const pendingRef = useRef(null)   // URL we are currently waiting on
   const spinnerTimerRef = useRef(null)
-
-  const activeUrl = showingMinimap ? minimapUrl : (images[activeIndex] || null)
-  const isFull = showingMinimap || !!fullLoaded[activeIndex] || (activeUrl && isReady(activeUrl))
-  // Ghost is visible when new image isn't loaded yet and we have a previous image to show
-  const showGhost = !isFull && !showingMinimap && !!ghostSrc && ghostSrc !== activeUrl
 
   /* Reset state on project navigation */
   useEffect(() => {
@@ -54,9 +50,9 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
       prevProjectRef.current = project
       setActiveIndex(0)
       setShowingMinimap(false)
-      setFullLoaded({})
-      setGhostSrc(null)
+      setDisplayedSrc(null)
       setShowSpinner(false)
+      pendingRef.current = null
       clearTimeout(spinnerTimerRef.current)
     }
   }, [project])
@@ -105,13 +101,39 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
     if (active) active.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
   }, [activeIndex])
 
-  /* Spinner: show after 500ms only when there is no ghost to cover the wait (first load) */
+  /* Load new image in background; only update displayedSrc once it's in memory.
+     This guarantees the <img> src never points to an unloaded URL — no blank frames. */
   useEffect(() => {
+    if (showingMinimap) return
+    const url = images[activeIndex] || null
+    if (!url) { setDisplayedSrc(null); return }
+
+    pendingRef.current = url
     clearTimeout(spinnerTimerRef.current)
-    if (isFull || showingMinimap || showGhost) { setShowSpinner(false); return }
-    spinnerTimerRef.current = setTimeout(() => setShowSpinner(true), 500)
+    setShowSpinner(false)
+
+    if (isReady(url)) {
+      setDisplayedSrc(url)
+      return
+    }
+
+    spinnerTimerRef.current = setTimeout(() => {
+      if (pendingRef.current === url) setShowSpinner(true)
+    }, 500)
+
+    const img = new Image()
+    img.onload = () => {
+      markReady(url)
+      if (pendingRef.current !== url) return
+      clearTimeout(spinnerTimerRef.current)
+      setDisplayedSrc(url)
+      setShowSpinner(false)
+    }
+    img.src = url
     return () => clearTimeout(spinnerTimerRef.current)
-  }, [isFull, showingMinimap, showGhost])
+  // images is stable for a given project (same CDN_BASE + project.images strings)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex, showingMinimap, project])
 
   /* Keyboard navigation — arrows for images, [ ] for maps */
   const handleKey = useCallback((e) => {
@@ -157,36 +179,21 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
                 )}
 
                 <div className="lb-image-and-counter">
-                  {activeUrl ? (
-                    <div className="lb-img-progressive">
-                      {/* Full-res: in normal flow, provides container sizing */}
+                  <div className="lb-img-progressive">
+                    {/* Single <img>, no key — same DOM element reused on every src swap.
+                        src only set to a URL confirmed in browser memory; never blank. */}
+                    {(showingMinimap ? minimapUrl : displayedSrc) && (
                       <img
-                        key={showingMinimap ? 'minimap' : `full-${activeIndex}`}
-                        src={activeUrl}
+                        src={showingMinimap ? minimapUrl : displayedSrc}
                         alt={project.title}
-                        className={`lb-img-full${isFull ? ' lb-img-full--visible' : ''}`}
-                        onLoad={() => {
-                          markReady(activeUrl)
-                          if (!showingMinimap) {
-                            setGhostSrc(activeUrl)  // keep ghost src in sync with last loaded image
-                            setFullLoaded(p => ({ ...p, [activeIndex]: true }))
-                          }
-                        }}
+                        className="lb-img-full"
+                        decoding="sync"
                       />
-                      {/* Ghost: ALWAYS in DOM so browser keeps the bitmap decoded.
-                          Shown/hidden via CSS class only — no element insertion on switch. */}
-                      {!showingMinimap && (
-                        <img
-                          src={ghostSrc || ''}
-                          alt=""
-                          className={`lb-img-ghost${showGhost ? ' lb-img-ghost--visible' : ''}`}
-                        />
-                      )}
-                      {showSpinner && <div className="lb-spinner" aria-label="Loading" />}
-                    </div>
-                  ) : (
-                    <div className="lb-no-image">No image available</div>
-                  )}
+                    )}
+                    {showSpinner && !showingMinimap && (
+                      <div className="lb-spinner" aria-label="Loading" />
+                    )}
+                  </div>
                   {!showingMinimap && images.length > 0 && (
                     <p className="lb-counter">{activeIndex + 1} / {images.length}</p>
                   )}
