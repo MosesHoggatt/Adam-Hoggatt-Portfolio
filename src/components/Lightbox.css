@@ -8,6 +8,7 @@
   align-items: center;
   justify-content: center;
   animation: lb-fade-in 0.18s ease;
+  touch-action: none; /* prevents Android Chrome touch-scroll bubbling to page */
 }
 
 @keyframes lb-fade-in {
@@ -154,6 +155,17 @@
   opacity: 1;
 }
 
+/* Ghost: last confirmed-visible image, absolute overlay while next image loads (up to 500ms). */
+.lb-img-ghost {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 2px;
+  user-select: none;
+}
+
 /* Thumbnail: absolute overlay, shown while full-res loads.
    Removed once full-res is ready (conditional render). */
 .lb-img-placeholder {
@@ -218,6 +230,7 @@
   padding: 1.4rem 1.2rem 1rem;
   border-left: 1px solid #2a2a2a;
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: #1a1a1a;
 }
 
@@ -254,6 +267,7 @@
   border-top: 1px solid #2a2a2a;
   max-height: 140px;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .lb-thumb {

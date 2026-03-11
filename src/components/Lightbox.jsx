@@ -39,6 +39,9 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
   const [thumbLoaded, setThumbLoaded] = useState({})
   const thumbsRef = useRef(null)
   const prevProjectRef = useRef(project)
+  const lastVisibleUrl = useRef(null)     // last URL that was fully shown
+  const [ghostUrl, setGhostUrl] = useState(null)
+  const ghostTimerRef = useRef(null)
 
   /* Reset state on project navigation */
   useEffect(() => {
@@ -48,13 +51,33 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
       setShowingMinimap(false)
       setFullLoaded({})
       setThumbLoaded({})
+      setGhostUrl(null)
+      lastVisibleUrl.current = null
+      clearTimeout(ghostTimerRef.current)
     }
   }, [project])
 
-  /* Lock body scroll while open */
+  /* Lock body scroll while open.
+     - position:fixed + top offset: required for iOS Safari momentum scroll
+     - html overflow:hidden: required for Android Chrome (scrolls <html>, not <body>)
+     - both together cover all mobile browsers */
   useEffect(() => {
+    const scrollY = window.scrollY
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.left = '0'
+    document.body.style.right = '0'
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
+    return () => {
+      document.documentElement.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.left = ''
+      document.body.style.right = ''
+      document.body.style.overflow = ''
+      window.scrollTo(0, scrollY)
+    }
   }, [])
 
   /* Preload all images for current project + adjacent projects' heroes */
@@ -77,6 +100,22 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
     const active = thumbsRef.current.querySelector('.lb-thumb-active')
     if (active) active.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
   }, [activeIndex])
+
+  /* Hold the last visible frame for up to 500 ms while a new image loads.
+     Prevents blink-to-black when switching between uncached images. */
+  useEffect(() => {
+    clearTimeout(ghostTimerRef.current)
+    if (showingMinimap || isFull) {
+      if (isFull && activeUrl) lastVisibleUrl.current = activeUrl
+      setGhostUrl(null)
+      return
+    }
+    if (lastVisibleUrl.current) {
+      setGhostUrl(lastVisibleUrl.current)
+      ghostTimerRef.current = setTimeout(() => setGhostUrl(null), 500)
+    }
+    return () => clearTimeout(ghostTimerRef.current)
+  }, [activeIndex, showingMinimap, isFull, activeUrl])
 
   /* Keyboard navigation — arrows for images, [ ] for maps */
   const handleKey = useCallback((e) => {
@@ -141,8 +180,17 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
                           if (!showingMinimap) setFullLoaded(p => ({ ...p, [activeIndex]: true }))
                         }}
                       />
-                      {/* Thumbnail: absolute overlay, visible until full-res ready */}
-                      {!showingMinimap && !isFull && (
+                      {/* Ghost: last confirmed-visible image, persists up to 500ms */}
+                      {!isFull && ghostUrl && (
+                        <img
+                          key={`ghost-${ghostUrl}`}
+                          src={ghostUrl}
+                          alt=""
+                          className="lb-img-ghost"
+                        />
+                      )}
+                      {/* Thumbnail: fallback once ghost expires and full-res still loading */}
+                      {!showingMinimap && !isFull && !ghostUrl && (
                         <img
                           key={`thumb-${activeIndex}`}
                           src={activeThumb}
@@ -154,8 +202,8 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
                           }}
                         />
                       )}
-                      {/* Spinner: only if absolutely nothing has loaded yet */}
-                      {!isFull && !isThumb && (
+                      {/* Spinner: only once ghost and thumbnail both absent */}
+                      {!isFull && !ghostUrl && !isThumb && (
                         <div className="lb-spinner" aria-label="Loading" />
                       )}
                     </div>
