@@ -43,6 +43,12 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
   const [ghostUrl, setGhostUrl] = useState(null)
   const ghostTimerRef = useRef(null)
 
+  // Derived display values — computed before hooks so useEffects can reference them
+  const activeUrl   = showingMinimap ? minimapUrl : (images[activeIndex] || null)
+  const activeThumb = thumbnails[activeIndex]
+  const isFull  = showingMinimap || !!fullLoaded[activeIndex] || (activeUrl && isReady(activeUrl))
+  const isThumb = showingMinimap || !!thumbLoaded[activeIndex] || (activeThumb && isReady(activeThumb))
+
   /* Reset state on project navigation */
   useEffect(() => {
     if (prevProjectRef.current !== project) {
@@ -132,12 +138,6 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
   }, [handleKey])
 
   if (!project) return null
-
-  const activeUrl = showingMinimap ? minimapUrl : (images[activeIndex] || null)
-  const activeThumb = thumbnails[activeIndex]
-  // Check both React state AND the global preload cache for instant display
-  const isFull  = showingMinimap || !!fullLoaded[activeIndex] || (activeUrl && isReady(activeUrl))
-  const isThumb = showingMinimap || !!thumbLoaded[activeIndex] || (activeThumb && isReady(activeThumb))
 
   // Format release date e.g. "November 13, 2012"
   const releaseDate = project.date
