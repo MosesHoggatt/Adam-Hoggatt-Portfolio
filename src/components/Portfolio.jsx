@@ -31,15 +31,45 @@ function useMediaQuery(query) {
   return matches
 }
 
-/** Preload a list of URLs into the browser cache without blocking render.
- *  Returns the Image objects so callers can keep them alive (prevent GC cancellation). */
-const _preloadStore = []
-function preloadImages(urls) {
-  urls.forEach(url => {
+// ── Background image preload queue ─────────────────────────────────────────
+// 4-slot bounded loader. bgAdd() enqueues in visual order (top → bottom).
+// bgBump() moves a URL to the front for hover / scroll-ahead priority.
+// Already-queued or completed URLs are silently deduped.
+const BG_SLOTS  = 4
+const _bgQueued = new Set()   // URLs that have entered the queue (dedup guard)
+const _bgDone   = new Set()   // URLs whose download completed
+const _bgPending = []         // ordered work list
+let   _bgActive  = 0
+
+function _bgDrain() {
+  while (_bgActive < BG_SLOTS && _bgPending.length > 0) {
+    const url = _bgPending.shift()
+    _bgActive++
     const img = new Image()
+    img.onload = img.onerror = () => { _bgDone.add(url); _bgActive--; _bgDrain() }
     img.src = url
-    _preloadStore.push(img) // prevent GC from cancelling in-flight requests
-  })
+  }
+}
+
+/** Append a URL to the back of the queue (visual order, normal priority). */
+function bgAdd(url) {
+  if (_bgQueued.has(url)) return
+  _bgQueued.add(url)
+  _bgPending.push(url)
+  _bgDrain()
+}
+
+/** Move a URL to the front of the pending queue (hover / near-viewport). */
+function bgBump(url) {
+  if (_bgDone.has(url)) return                    // browser already cached it
+  if (!_bgQueued.has(url)) {                      // not yet queued — add at front
+    _bgQueued.add(url)
+    _bgPending.unshift(url)
+    _bgDrain()
+    return
+  }
+  const idx = _bgPending.indexOf(url)             // in-flight if idx === -1 (no-op)
+  if (idx > 0) { _bgPending.splice(idx, 1); _bgPending.unshift(url); _bgDrain() }
 }
 
 const shortName = (str) => str.replace('Call of Duty: ', '')
@@ -137,14 +167,17 @@ const Portfolio = () => {
         .filter(Boolean)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
 
-      // Kick off background card image preload for all projects immediately
-      // so card images are cached before the user scrolls to them
+      // Background preload in visual order (top → bottom).
+      // Cards 0-5 are loading="eager" in the DOM — browser handles them.
+      // The bg queue covers the rest with a 4-slot concurrency cap so
+      // in-flight requests don't clog bandwidth during initial page load.
       setTimeout(() => {
-        valid.forEach(p => {
-          if (p.images.length > 0) preloadImages([cardUrl(p.images[0])])
-          if (p.minimap) preloadImages([minimapThumbUrl(p.minimap)])
+        valid.forEach((p, i) => {
+          if (i >= 6 && p.images.length > 0) bgAdd(cardUrl(p.images[0]))
+          if (i >= 6 && p.minimap) bgAdd(minimapThumbUrl(p.minimap))
         })
-        valid.forEach(p => preloadImages(p.images.map(thumbUrl)))
+        // Lightbox strip thumbnails — lower priority, appended after card heroes
+        valid.forEach(p => p.images.forEach(img => bgAdd(thumbUrl(img))))
       }, 0)
 
       // 4. Build category filter list
@@ -324,9 +357,9 @@ const Portfolio = () => {
             className="project-card"
             onClick={() => { setLightboxInitialMinimap(false); setLightboxIndex(idx) }}
             onMouseEnter={() => {
-              preloadImages(project.images.map(thumbUrl))
-              preloadImages([cardUrl(project.images[0])])
-              if (project.minimap) preloadImages([minimapThumbUrl(project.minimap)])
+              if (project.images.length > 0) bgBump(cardUrl(project.images[0]))
+              if (project.minimap) bgBump(minimapThumbUrl(project.minimap))
+              project.images.forEach(img => bgAdd(thumbUrl(img)))
             }}
             role="button"
             tabIndex={0}
