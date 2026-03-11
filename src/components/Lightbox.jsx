@@ -74,15 +74,20 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
   const minimapUrl = project?.minimap ? s3Url(project.minimap) : null
   const [activeIndex, setActiveIndex] = useState(0)
   const [showingMinimap, setShowingMinimap] = useState(initialShowMinimap)
+  // Per-image load state: track whether full-res and thumbnail are ready
+  const [fullLoaded, setFullLoaded]   = useState({})
+  const [thumbLoaded, setThumbLoaded] = useState({})
   const thumbsRef = useRef(null)
   const prevProjectRef = useRef(project)
 
-  /* Reset index on project navigation (prev/next), but NOT on initial mount */
+  /* Reset state on project navigation */
   useEffect(() => {
     if (prevProjectRef.current !== project) {
       prevProjectRef.current = project
       setActiveIndex(0)
       setShowingMinimap(false)
+      setFullLoaded({})
+      setThumbLoaded({})
     }
   }, [project])
 
@@ -156,6 +161,14 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
   if (!project) return null
 
   const activeUrl = showingMinimap ? minimapUrl : (images[activeIndex] || null)
+  const activeThumb = thumbnails[activeIndex]
+  const isFull  = showingMinimap || !!fullLoaded[activeIndex]
+  const isThumb = showingMinimap || !!thumbLoaded[activeIndex]
+
+  // Format release date e.g. "November 13, 2012"
+  const releaseDate = project.date
+    ? new Date(project.date + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    : null
 
   return (
     <div className="lb-backdrop" onClick={onClose}>
@@ -180,9 +193,34 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
                 )}
 
                 <div className="lb-image-and-counter">
-                  {activeUrl
-                    ? <img src={activeUrl} alt={project.title} />
-                    : <div className="lb-no-image">No image available</div>}
+                  {activeUrl ? (
+                    <div className="lb-img-progressive">
+                      {/* Thumbnail shown blurred until full-res is ready */}
+                      {!isFull && (
+                        <img
+                          key={`thumb-${activeIndex}`}
+                          src={activeThumb}
+                          alt={project.title}
+                          className="lb-img-thumb-bg"
+                          onLoad={() => setThumbLoaded(p => ({ ...p, [activeIndex]: true }))}
+                        />
+                      )}
+                      {/* Full-res image; invisible until loaded, then fades in */}
+                      <img
+                        key={`full-${activeIndex}`}
+                        src={activeUrl}
+                        alt={project.title}
+                        className={`lb-img-full${isFull ? ' lb-img-full--ready' : ''}`}
+                        onLoad={() => setFullLoaded(p => ({ ...p, [activeIndex]: true }))}
+                      />
+                      {/* Spinner only if neither full nor thumb has loaded */}
+                      {!isFull && !isThumb && (
+                        <div className="lb-spinner" aria-label="Loading" />
+                      )}
+                    </div>
+                  ) : (
+                    <div className="lb-no-image">No image available</div>
+                  )}
                   {!showingMinimap && images.length > 0 && (
                     <p className="lb-counter">{activeIndex + 1} / {images.length}</p>
                   )}
@@ -223,6 +261,13 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
                 <span key={c} className="tag">{c.replace('Call of Duty: ', '')}</span>
               ))}
             </div>
+
+            {releaseDate && (
+              <div className="lb-release-date">
+                <span className="lb-release-date-label">Released</span>
+                <span className="lb-release-date-value">{releaseDate}</span>
+              </div>
+            )}
 
             {minimapUrl && (
               <div className="lb-minimap">

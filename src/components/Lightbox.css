@@ -123,6 +123,66 @@
   user-select: none;
 }
 
+/* ── Progressive image loading ────────────────────────────────── */
+.lb-img-progressive {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Blurred thumbnail shown while full-res loads */
+.lb-img-thumb-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: blur(12px);
+  transform: scale(1.04); /* hide blur edge artifacts */
+  opacity: 0.6;
+  user-select: none;
+}
+
+/* Full-res image: hidden (opacity 0) until loaded, then fades in */
+.lb-img-full {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 2px;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.lb-img-full--ready {
+  opacity: 1;
+}
+
+/* Spinner: centered over the blurred thumb, only shown when thumb also absent */
+.lb-spinner {
+  position: absolute;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255,255,255,0.12);
+  border-top-color: #f26501;
+  border-radius: 50%;
+  animation: lb-spin 0.7s linear infinite;
+}
+@keyframes lb-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── Nav arrows ───────────────────────────────────────────────── */
 .lb-nav {
   position: absolute;
@@ -234,6 +294,26 @@
 .lb-no-image {
   color: #555;
   font-size: 0.9rem;
+}
+
+/* ── Release date ─────────────────────────────────────────────── */
+.lb-release-date {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-bottom: 0.2rem;
+}
+.lb-release-date-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.lb-release-date-value {
+  font-size: 0.82rem;
+  color: #bbb;
+  font-weight: 500;
 }
 
 /* ── Bottom footer: map navigation ───────────────────────────── */
