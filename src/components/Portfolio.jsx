@@ -20,6 +20,21 @@ const shortName = (str) => str.replace('Call of Duty: ', '')
 
 // simple hook for media queries; returns true/false and updates on resize
 function useMediaQuery(query) {
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia(query).matches
+  })
+  useEffect(() => {
+    const m = window.matchMedia(query)
+    const handler = (e) => setMatches(e.matches)
+    m.addEventListener('change', handler)
+    return () => m.removeEventListener('change', handler)
+  }, [query])
+  return matches
+}
+
+/* Parse markdown-style links [text](url) in a string and return React elements */
+const parseBioLinks = (text) => {
   if (!text) return null
   const parts = []
   const re = /\[([^\]]+)\]\(([^)]+)\)/g
