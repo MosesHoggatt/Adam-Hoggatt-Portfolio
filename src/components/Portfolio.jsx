@@ -16,66 +16,10 @@ const cardUrl        = (path) => s3Url(path.replace('/images/', '/card/').replac
 // 400px WebP thumbnail sized for the card minimap slot (~150-350 CSS px, covers 2× retina)
 const minimapThumbUrl = (path) => s3Url(path.replace('/images/', '/minimap-thumbnails/').replace(/\.[^.]+$/, '.webp'))
 
-// simple hook for media queries; returns true/false and updates on resize
-function useMediaQuery(query) {
-  const [matches, setMatches] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return window.matchMedia(query).matches
-  })
-  useEffect(() => {
-    const m = window.matchMedia(query)
-    const handler = (e) => setMatches(e.matches)
-    m.addEventListener('change', handler)
-    return () => m.removeEventListener('change', handler)
-  }, [query])
-  return matches
-}
-
-// ── Background image preload queue ─────────────────────────────────────────
-// 4-slot bounded loader. bgAdd() enqueues in visual order (top → bottom).
-// bgBump() moves a URL to the front for hover / scroll-ahead priority.
-// Already-queued or completed URLs are silently deduped.
-const BG_SLOTS  = 4
-const _bgQueued = new Set()   // URLs that have entered the queue (dedup guard)
-const _bgDone   = new Set()   // URLs whose download completed
-const _bgPending = []         // ordered work list
-let   _bgActive  = 0
-
-function _bgDrain() {
-  while (_bgActive < BG_SLOTS && _bgPending.length > 0) {
-    const url = _bgPending.shift()
-    _bgActive++
-    const img = new Image()
-    img.onload = img.onerror = () => { _bgDone.add(url); _bgActive--; _bgDrain() }
-    img.src = url
-  }
-}
-
-/** Append a URL to the back of the queue (visual order, normal priority). */
-function bgAdd(url) {
-  if (_bgQueued.has(url)) return
-  _bgQueued.add(url)
-  _bgPending.push(url)
-  _bgDrain()
-}
-
-/** Move a URL to the front of the pending queue (hover / near-viewport). */
-function bgBump(url) {
-  if (_bgDone.has(url)) return                    // browser already cached it
-  if (!_bgQueued.has(url)) {                      // not yet queued — add at front
-    _bgQueued.add(url)
-    _bgPending.unshift(url)
-    _bgDrain()
-    return
-  }
-  const idx = _bgPending.indexOf(url)             // in-flight if idx === -1 (no-op)
-  if (idx > 0) { _bgPending.splice(idx, 1); _bgPending.unshift(url); _bgDrain() }
-}
-
 const shortName = (str) => str.replace('Call of Duty: ', '')
 
-/* Parse markdown-style links [text](url) in a string and return React elements */
-const parseBioLinks = (text) => {
+// simple hook for media queries; returns true/false and updates on resize
+function useMediaQuery(query) {
   if (!text) return null
   const parts = []
   const re = /\[([^\]]+)\]\(([^)]+)\)/g
@@ -166,19 +110,6 @@ const Portfolio = () => {
       const valid = loaded
         .filter(Boolean)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
-
-      // Background preload in visual order (top → bottom).
-      // Cards 0-5 are loading="eager" in the DOM — browser handles them.
-      // The bg queue covers the rest with a 4-slot concurrency cap so
-      // in-flight requests don't clog bandwidth during initial page load.
-      setTimeout(() => {
-        valid.forEach((p, i) => {
-          if (i >= 6 && p.images.length > 0) bgAdd(cardUrl(p.images[0]))
-          if (i >= 6 && p.minimap) bgAdd(minimapThumbUrl(p.minimap))
-        })
-        // Lightbox strip thumbnails — lower priority, appended after card heroes
-        valid.forEach(p => p.images.forEach(img => bgAdd(thumbUrl(img))))
-      }, 0)
 
       // 4. Build category filter list
       const catSet = new Set(valid.flatMap(p => p.categories))
@@ -357,9 +288,8 @@ const Portfolio = () => {
             className="project-card"
             onClick={() => { setLightboxInitialMinimap(false); setLightboxIndex(idx) }}
             onMouseEnter={() => {
-              if (project.images.length > 0) bgBump(cardUrl(project.images[0]))
-              if (project.minimap) bgBump(minimapThumbUrl(project.minimap))
-              project.images.forEach(img => bgAdd(thumbUrl(img)))
+              // Preload the full-res hero so lightbox opens instantly
+              if (project.images.length > 0) { const img = new Image(); img.src = s3Url(project.images[0]) }
             }}
             role="button"
             tabIndex={0}

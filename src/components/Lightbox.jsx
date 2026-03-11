@@ -6,66 +6,25 @@ const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S
 const s3Url = (path) => `${S3_BASE}/${path}`
 const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
 
-// ── Global image loader ───────────────────────────────────────────────────────
-// Single pool shared across every project. Max 10 concurrent downloads.
-// Successfully loaded Image objects are kept alive in `cache` so the browser
-// retains their decoded pixel data in memory — preventing the "slow re-decode
-// from disk cache" problem on revisited images.
-const MAX_SLOTS = 10
-const loaded  = new Set()   // completed URLs (in browser cache)
-const cache   = new Map()   // url → Image  (keeps decoded frame in memory)
-let   active  = []          // Image objects currently downloading
-let   pending = []          // URLs waiting for a free slot
+// ── Lightweight preloader ─────────────────────────────────────────────────────
+// Fire-and-forget Image loads. The browser's HTTP/2 multiplexer handles
+// concurrency, and immutable Cache-Control headers make repeat loads instant.
+const _started = new Set()   // URLs we've already kicked off
+const _ready   = new Set()   // URLs confirmed loaded (in browser cache)
 
-function drain() {
-  while (active.length < MAX_SLOTS && pending.length > 0) {
-    const url = pending.shift()
-    if (loaded.has(url)) { drain(); return }
+function preload(urls) {
+  for (const u of urls) {
+    if (_started.has(u)) continue
+    _started.add(u)
     const img = new Image()
-    active.push(img)
-    const finish = (ok) => () => {
-      if (ok) { loaded.add(url); cache.set(url, img) }
-      active = active.filter(a => a !== img)
-      img.onload = img.onerror = null
-      drain()
-    }
-    img.onload  = finish(true)
-    img.onerror = finish(false)
-    img.src = url
+    img.onload = () => _ready.add(u)
+    img.src = u
   }
 }
 
-// Bump `urls` to the front of the queue.
-// Cancels active loads NOT in the new list to free slots immediately.
-// Already-loaded URLs are skipped entirely.
-function priorityLoad(urls) {
-  const urlSet     = new Set(urls)
-  const activeUrls = new Set(active.map(i => i.src))
-
-  // Cancel active loads that aren't wanted by this request
-  const keep = []
-  active.forEach(img => {
-    if (urlSet.has(img.src)) {
-      keep.push(img)
-    } else {
-      img.onload = img.onerror = null
-      img.src = ''
-    }
-  })
-  active = keep
-
-  // Prepend fresh urls (skip already loaded or already downloading)
-  const fresh = urls.filter(u => !loaded.has(u) && !activeUrls.has(u))
-  pending = [...fresh, ...pending.filter(u => !urlSet.has(u))]
-  drain()
-}
-
-function cancelAll() {
-  pending = []
-  active.forEach(img => { img.onload = img.onerror = null; img.src = '' })
-  active = []
-}
-// ─────────────────────────────────────────────────────────────────────────────
+/** Check if a URL has finished loading (via preload or previous render). */
+function isReady(url) { return _ready.has(url) }
+function markReady(url) { _ready.add(url) }
 
 const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevProject, onNextProject, onClose, initialShowMinimap = false }) => {
   const imagePaths = project?.images || []
@@ -97,45 +56,19 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  /* On project open/change: reprioritize the global pool for this project.
-     Current image[0] first, then minimap, then outward from index 0.
-     Active loads NOT in this list are cancelled immediately to free slots. */
+  /* Preload all images for current project + adjacent projects' heroes */
   useEffect(() => {
-    const n = images.length
-    if (n === 0) return
-    const ordered = [images[0]]
-    if (minimapUrl) ordered.push(minimapUrl)
-    for (let offset = 1; offset < n; offset++) {
-      ordered.push(images[offset % n])
-      const back = (n - offset) % n
-      if (back !== offset % n) ordered.push(images[back])
-    }
-    // Buffer 3 adjacent projects in each direction
-    const BUFFER = 3
-    for (let d = 1; d <= BUFFER; d++) {
+    const urls = [...images]
+    if (minimapUrl) urls.push(minimapUrl)
+    for (let d = 1; d <= 2; d++) {
       const prev = allProjects?.[projectIndex - d]
       const next = allProjects?.[projectIndex + d]
-      if (prev?.images?.[0]) ordered.push(s3Url(prev.images[0]))
-      if (next?.images?.[0]) ordered.push(s3Url(next.images[0]))
+      if (prev?.images?.[0]) urls.push(s3Url(prev.images[0]))
+      if (next?.images?.[0]) urls.push(s3Url(next.images[0]))
     }
-    priorityLoad(ordered)
+    preload(urls)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project])
-
-  /* On thumbnail click / arrow nav: bump active image + neighbours to front. */
-  useEffect(() => {
-    const n = images.length
-    if (n === 0) return
-    priorityLoad([
-      images[activeIndex],
-      images[(activeIndex + 1) % n],
-      images[(activeIndex - 1 + n) % n],
-    ])
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIndex, project])
-
-  /* Cancel everything when the lightbox is closed. */
-  useEffect(() => () => cancelAll(), [])
 
   /* Scroll active thumb into view whenever index changes */
   useEffect(() => {
@@ -162,8 +95,9 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
 
   const activeUrl = showingMinimap ? minimapUrl : (images[activeIndex] || null)
   const activeThumb = thumbnails[activeIndex]
-  const isFull  = showingMinimap || !!fullLoaded[activeIndex]
-  const isThumb = showingMinimap || !!thumbLoaded[activeIndex]
+  // Check both React state AND the global preload cache for instant display
+  const isFull  = showingMinimap || !!fullLoaded[activeIndex] || (activeUrl && isReady(activeUrl))
+  const isThumb = showingMinimap || !!thumbLoaded[activeIndex] || (activeThumb && isReady(activeThumb))
 
   // Format release date e.g. "November 13, 2012"
   const releaseDate = project.date
@@ -195,23 +129,31 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
                 <div className="lb-image-and-counter">
                   {activeUrl ? (
                     <div className="lb-img-progressive">
-                      {/* Thumbnail: shown clean while full-res loads, instantly hidden once ready */}
+                      {/* Full-res: in normal flow, provides container sizing */}
                       <img
-                        key={`thumb-${activeIndex}`}
-                        src={activeThumb}
-                        alt={project.title}
-                        className={`lb-img-thumb${isFull ? ' lb-img-thumb--hidden' : ''}`}
-                        onLoad={() => setThumbLoaded(p => ({ ...p, [activeIndex]: true }))}
-                      />
-                      {/* Full-res: always loading in background, fades in on dark bg once ready */}
-                      <img
-                        key={`full-${activeIndex}`}
+                        key={showingMinimap ? 'minimap' : `full-${activeIndex}`}
                         src={activeUrl}
                         alt={project.title}
-                        className={`lb-img-full${isFull ? ' lb-img-full--ready' : ''}`}
-                        onLoad={() => setFullLoaded(p => ({ ...p, [activeIndex]: true }))}
+                        className={`lb-img-full${isFull ? ' lb-img-full--visible' : ''}`}
+                        onLoad={() => {
+                          markReady(activeUrl)
+                          if (!showingMinimap) setFullLoaded(p => ({ ...p, [activeIndex]: true }))
+                        }}
                       />
-                      {/* Spinner only when neither thumbnail nor full-res has loaded */}
+                      {/* Thumbnail: absolute overlay, visible until full-res ready */}
+                      {!showingMinimap && !isFull && (
+                        <img
+                          key={`thumb-${activeIndex}`}
+                          src={activeThumb}
+                          alt=""
+                          className="lb-img-placeholder"
+                          onLoad={() => {
+                            markReady(activeThumb)
+                            setThumbLoaded(p => ({ ...p, [activeIndex]: true }))
+                          }}
+                        />
+                      )}
+                      {/* Spinner: only if absolutely nothing has loaded yet */}
                       {!isFull && !isThumb && (
                         <div className="lb-spinner" aria-label="Loading" />
                       )}
