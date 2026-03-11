@@ -136,39 +136,39 @@
   overflow: hidden;
 }
 
-/* Blurred thumbnail shown while full-res loads */
-.lb-img-thumb-bg {
+/* Thumbnail: shown clean (no blur/effects) while full-res loads */
+.lb-img-thumb {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: blur(12px);
-  transform: scale(1.04); /* hide blur edge artifacts */
-  opacity: 0.6;
+  z-index: 0;
   user-select: none;
 }
+/* Instantly hidden once full-res is ready — no mixing */
+.lb-img-thumb--hidden {
+  display: none;
+}
 
-/* Full-res image: hidden (opacity 0) until loaded, then fades in */
+/* Full-res image: hidden (opacity 0) until loaded, then fades in over dark bg */
 .lb-img-full {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 1;
-  display: block;
-  max-width: 100%;
-  max-height: 100%;
   width: 100%;
   height: 100%;
   object-fit: contain;
   border-radius: 2px;
   user-select: none;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 .lb-img-full--ready {
   opacity: 1;
 }
 
-/* Spinner: centered over the blurred thumb, only shown when thumb also absent */
+/* Spinner: only shown when neither thumbnail nor full-res has loaded */
 .lb-spinner {
   position: absolute;
   z-index: 2;

@@ -195,17 +195,15 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
                 <div className="lb-image-and-counter">
                   {activeUrl ? (
                     <div className="lb-img-progressive">
-                      {/* Thumbnail shown blurred until full-res is ready */}
-                      {!isFull && (
-                        <img
-                          key={`thumb-${activeIndex}`}
-                          src={activeThumb}
-                          alt={project.title}
-                          className="lb-img-thumb-bg"
-                          onLoad={() => setThumbLoaded(p => ({ ...p, [activeIndex]: true }))}
-                        />
-                      )}
-                      {/* Full-res image; invisible until loaded, then fades in */}
+                      {/* Thumbnail: shown clean while full-res loads, instantly hidden once ready */}
+                      <img
+                        key={`thumb-${activeIndex}`}
+                        src={activeThumb}
+                        alt={project.title}
+                        className={`lb-img-thumb${isFull ? ' lb-img-thumb--hidden' : ''}`}
+                        onLoad={() => setThumbLoaded(p => ({ ...p, [activeIndex]: true }))}
+                      />
+                      {/* Full-res: always loading in background, fades in on dark bg once ready */}
                       <img
                         key={`full-${activeIndex}`}
                         src={activeUrl}
@@ -213,7 +211,7 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
                         className={`lb-img-full${isFull ? ' lb-img-full--ready' : ''}`}
                         onLoad={() => setFullLoaded(p => ({ ...p, [activeIndex]: true }))}
                       />
-                      {/* Spinner only if neither full nor thumb has loaded */}
+                      {/* Spinner only when neither thumbnail nor full-res has loaded */}
                       {!isFull && !isThumb && (
                         <div className="lb-spinner" aria-label="Loading" />
                       )}
