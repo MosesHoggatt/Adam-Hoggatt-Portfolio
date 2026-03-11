@@ -34,20 +34,21 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
   const minimapUrl = project?.minimap ? s3Url(project.minimap) : null
   const [activeIndex, setActiveIndex] = useState(0)
   const [showingMinimap, setShowingMinimap] = useState(initialShowMinimap)
-  // Per-image load state: track whether full-res and thumbnail are ready
-  const [fullLoaded, setFullLoaded]   = useState({})
-  const [thumbLoaded, setThumbLoaded] = useState({})
+  const [fullLoaded, setFullLoaded] = useState({})
   const thumbsRef = useRef(null)
   const prevProjectRef = useRef(project)
-  const lastVisibleUrl = useRef(null)     // last URL that was fully shown
-  const [ghostUrl, setGhostUrl] = useState(null)
-  const ghostTimerRef = useRef(null)
+  const lastVisibleUrl = useRef(null)   // last full-res URL confirmed shown — read during render
+  const spinnerTimerRef = useRef(null)
+  const [spinnerForIndex, setSpinnerForIndex] = useState(null) // index whose 500ms timer fired
 
-  // Derived display values — computed before hooks so useEffects can reference them
-  const activeUrl   = showingMinimap ? minimapUrl : (images[activeIndex] || null)
-  const activeThumb = thumbnails[activeIndex]
+  const activeUrl = showingMinimap ? minimapUrl : (images[activeIndex] || null)
   const isFull  = showingMinimap || !!fullLoaded[activeIndex] || (activeUrl && isReady(activeUrl))
-  const isThumb = showingMinimap || !!thumbLoaded[activeIndex] || (activeThumb && isReady(activeThumb))
+  // Ghost: read ref directly — available on the SAME render as activeIndex change, no useEffect delay.
+  // Shows the last confirmed-loaded image until the new one is ready or 500ms elapses.
+  const showGhost = !isFull && !showingMinimap && spinnerForIndex !== activeIndex
+                    && !!lastVisibleUrl.current && lastVisibleUrl.current !== activeUrl
+  // Spinner: only after ghost expires (500ms timer fires for this specific index)
+  const showSpinner = !isFull && !showingMinimap && spinnerForIndex === activeIndex
 
   /* Reset state on project navigation */
   useEffect(() => {
@@ -56,10 +57,9 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
       setActiveIndex(0)
       setShowingMinimap(false)
       setFullLoaded({})
-      setThumbLoaded({})
-      setGhostUrl(null)
       lastVisibleUrl.current = null
-      clearTimeout(ghostTimerRef.current)
+      setSpinnerForIndex(null)
+      clearTimeout(spinnerTimerRef.current)
     }
   }, [project])
 
@@ -107,21 +107,14 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
     if (active) active.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
   }, [activeIndex])
 
-  /* Hold the last visible frame for up to 500 ms while a new image loads.
-     Prevents blink-to-black when switching between uncached images. */
+  /* Spinner fallback: if new image hasn't loaded after 500ms, clear ghost and show spinner */
   useEffect(() => {
-    clearTimeout(ghostTimerRef.current)
-    if (showingMinimap || isFull) {
-      if (isFull && activeUrl) lastVisibleUrl.current = activeUrl
-      setGhostUrl(null)
-      return
-    }
-    if (lastVisibleUrl.current) {
-      setGhostUrl(lastVisibleUrl.current)
-      ghostTimerRef.current = setTimeout(() => setGhostUrl(null), 500)
-    }
-    return () => clearTimeout(ghostTimerRef.current)
-  }, [activeIndex, showingMinimap, isFull, activeUrl])
+    clearTimeout(spinnerTimerRef.current)
+    if (isFull || showingMinimap) return
+    const idx = activeIndex
+    spinnerTimerRef.current = setTimeout(() => setSpinnerForIndex(idx), 500)
+    return () => clearTimeout(spinnerTimerRef.current)
+  }, [activeIndex, showingMinimap, isFull])
 
   /* Keyboard navigation — arrows for images, [ ] for maps */
   const handleKey = useCallback((e) => {
@@ -177,33 +170,23 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
                         className={`lb-img-full${isFull ? ' lb-img-full--visible' : ''}`}
                         onLoad={() => {
                           markReady(activeUrl)
-                          if (!showingMinimap) setFullLoaded(p => ({ ...p, [activeIndex]: true }))
+                          if (!showingMinimap) {
+                            lastVisibleUrl.current = activeUrl  // update ref before re-render
+                            setFullLoaded(p => ({ ...p, [activeIndex]: true }))
+                          }
                         }}
                       />
-                      {/* Ghost: last confirmed-visible image, persists up to 500ms */}
-                      {!isFull && ghostUrl && (
+                      {/* Ghost: previous confirmed-loaded image, shown on same render as index change */}
+                      {showGhost && (
                         <img
-                          key={`ghost-${ghostUrl}`}
-                          src={ghostUrl}
+                          key={`ghost-${lastVisibleUrl.current}`}
+                          src={lastVisibleUrl.current}
                           alt=""
                           className="lb-img-ghost"
                         />
                       )}
-                      {/* Thumbnail: fallback once ghost expires and full-res still loading */}
-                      {!showingMinimap && !isFull && !ghostUrl && (
-                        <img
-                          key={`thumb-${activeIndex}`}
-                          src={activeThumb}
-                          alt=""
-                          className="lb-img-placeholder"
-                          onLoad={() => {
-                            markReady(activeThumb)
-                            setThumbLoaded(p => ({ ...p, [activeIndex]: true }))
-                          }}
-                        />
-                      )}
-                      {/* Spinner: only once ghost and thumbnail both absent */}
-                      {!isFull && !ghostUrl && !isThumb && (
+                      {/* Spinner: only after 500ms with no image */}
+                      {showSpinner && (
                         <div className="lb-spinner" aria-label="Loading" />
                       )}
                     </div>
