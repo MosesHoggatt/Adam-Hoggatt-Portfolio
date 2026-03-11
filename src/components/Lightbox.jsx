@@ -35,20 +35,18 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
   const [activeIndex, setActiveIndex] = useState(0)
   const [showingMinimap, setShowingMinimap] = useState(initialShowMinimap)
   const [fullLoaded, setFullLoaded] = useState({})
+  // ghostSrc: last confirmed-loaded URL. Ghost <img> stays in DOM always;
+  // visibility toggled via CSS class — no element insertion = no decode delay = no blink.
+  const [ghostSrc, setGhostSrc] = useState(null)
+  const [showSpinner, setShowSpinner] = useState(false)
   const thumbsRef = useRef(null)
   const prevProjectRef = useRef(project)
-  const lastVisibleUrl = useRef(null)   // last full-res URL confirmed shown — read during render
   const spinnerTimerRef = useRef(null)
-  const [spinnerForIndex, setSpinnerForIndex] = useState(null) // index whose 500ms timer fired
 
   const activeUrl = showingMinimap ? minimapUrl : (images[activeIndex] || null)
-  const isFull  = showingMinimap || !!fullLoaded[activeIndex] || (activeUrl && isReady(activeUrl))
-  // Ghost: read ref directly — available on the SAME render as activeIndex change, no useEffect delay.
-  // Shows the last confirmed-loaded image until the new one is ready or 500ms elapses.
-  const showGhost = !isFull && !showingMinimap && spinnerForIndex !== activeIndex
-                    && !!lastVisibleUrl.current && lastVisibleUrl.current !== activeUrl
-  // Spinner: only after ghost expires (500ms timer fires for this specific index)
-  const showSpinner = !isFull && !showingMinimap && spinnerForIndex === activeIndex
+  const isFull = showingMinimap || !!fullLoaded[activeIndex] || (activeUrl && isReady(activeUrl))
+  // Ghost is visible when new image isn't loaded yet and we have a previous image to show
+  const showGhost = !isFull && !showingMinimap && !!ghostSrc && ghostSrc !== activeUrl
 
   /* Reset state on project navigation */
   useEffect(() => {
@@ -57,8 +55,8 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
       setActiveIndex(0)
       setShowingMinimap(false)
       setFullLoaded({})
-      lastVisibleUrl.current = null
-      setSpinnerForIndex(null)
+      setGhostSrc(null)
+      setShowSpinner(false)
       clearTimeout(spinnerTimerRef.current)
     }
   }, [project])
@@ -107,14 +105,13 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
     if (active) active.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
   }, [activeIndex])
 
-  /* Spinner fallback: if new image hasn't loaded after 500ms, clear ghost and show spinner */
+  /* Spinner: show after 500ms only when there is no ghost to cover the wait (first load) */
   useEffect(() => {
     clearTimeout(spinnerTimerRef.current)
-    if (isFull || showingMinimap) return
-    const idx = activeIndex
-    spinnerTimerRef.current = setTimeout(() => setSpinnerForIndex(idx), 500)
+    if (isFull || showingMinimap || showGhost) { setShowSpinner(false); return }
+    spinnerTimerRef.current = setTimeout(() => setShowSpinner(true), 500)
     return () => clearTimeout(spinnerTimerRef.current)
-  }, [activeIndex, showingMinimap, isFull])
+  }, [isFull, showingMinimap, showGhost])
 
   /* Keyboard navigation — arrows for images, [ ] for maps */
   const handleKey = useCallback((e) => {
@@ -171,24 +168,21 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
                         onLoad={() => {
                           markReady(activeUrl)
                           if (!showingMinimap) {
-                            lastVisibleUrl.current = activeUrl  // update ref before re-render
+                            setGhostSrc(activeUrl)  // keep ghost src in sync with last loaded image
                             setFullLoaded(p => ({ ...p, [activeIndex]: true }))
                           }
                         }}
                       />
-                      {/* Ghost: previous confirmed-loaded image, shown on same render as index change */}
-                      {showGhost && (
+                      {/* Ghost: ALWAYS in DOM so browser keeps the bitmap decoded.
+                          Shown/hidden via CSS class only — no element insertion on switch. */}
+                      {!showingMinimap && (
                         <img
-                          key={`ghost-${lastVisibleUrl.current}`}
-                          src={lastVisibleUrl.current}
+                          src={ghostSrc || ''}
                           alt=""
-                          className="lb-img-ghost"
+                          className={`lb-img-ghost${showGhost ? ' lb-img-ghost--visible' : ''}`}
                         />
                       )}
-                      {/* Spinner: only after 500ms with no image */}
-                      {showSpinner && (
-                        <div className="lb-spinner" aria-label="Loading" />
-                      )}
+                      {showSpinner && <div className="lb-spinner" aria-label="Loading" />}
                     </div>
                   ) : (
                     <div className="lb-no-image">No image available</div>
