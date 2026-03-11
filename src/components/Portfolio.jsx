@@ -10,9 +10,11 @@ const S3_BASE = `https://${awsConfig.Storage.S3.bucket}.s3.${awsConfig.Storage.S
 
 // Convert an S3 storage path (e.g. "projects/raid/images/raid.jpg")
 // to a public HTTPS URL — no signing, no Cognito needed.
-const s3Url = (path) => `${S3_BASE}/${path}`
-const thumbUrl = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
-const cardUrl  = (path) => s3Url(path.replace('/images/', '/card/').replace(/\.(jpe?g|png|gif)$/i, '.webp'))
+const s3Url          = (path) => `${S3_BASE}/${path}`
+const thumbUrl       = (path) => s3Url(path.replace('/images/', '/thumbnails/'))
+const cardUrl        = (path) => s3Url(path.replace('/images/', '/card/').replace(/\.(jpe?g|png|gif)$/i, '.webp'))
+// 400px WebP thumbnail sized for the card minimap slot (~150-350 CSS px, covers 2× retina)
+const minimapThumbUrl = (path) => s3Url(path.replace('/images/', '/minimap-thumbnails/').replace(/\.[^.]+$/, '.webp'))
 
 // simple hook for media queries; returns true/false and updates on resize
 function useMediaQuery(query) {
@@ -23,8 +25,8 @@ function useMediaQuery(query) {
   useEffect(() => {
     const m = window.matchMedia(query)
     const handler = (e) => setMatches(e.matches)
-    m.addListener(handler)
-    return () => m.removeListener(handler)
+    m.addEventListener('change', handler)
+    return () => m.removeEventListener('change', handler)
   }, [query])
   return matches
 }
@@ -140,6 +142,7 @@ const Portfolio = () => {
       setTimeout(() => {
         valid.forEach(p => {
           if (p.images.length > 0) preloadImages([cardUrl(p.images[0])])
+          if (p.minimap) preloadImages([minimapThumbUrl(p.minimap)])
         })
         valid.forEach(p => preloadImages(p.images.map(thumbUrl)))
       }, 0)
@@ -322,9 +325,8 @@ const Portfolio = () => {
             onClick={() => { setLightboxInitialMinimap(false); setLightboxIndex(idx) }}
             onMouseEnter={() => {
               preloadImages(project.images.map(thumbUrl))
-              preloadImages(project.images.map(s3Url))
               preloadImages([cardUrl(project.images[0])])
-              if (project.minimap) preloadImages([s3Url(project.minimap)])
+              if (project.minimap) preloadImages([minimapThumbUrl(project.minimap)])
             }}
             role="button"
             tabIndex={0}
@@ -373,7 +375,13 @@ const Portfolio = () => {
                         onKeyDown: e => e.key === 'Enter' && (e.stopPropagation(), setLightboxInitialMinimap(true), setLightboxIndex(idx)),
                       })}
                 >
-                  <img src={s3Url(project.minimap)} alt="Minimap" loading="lazy" decoding="async" />
+                  <img
+                    src={minimapThumbUrl(project.minimap)}
+                    alt="Minimap"
+                    loading={idx < 6 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = s3Url(project.minimap) }}
+                  />
                 </div>
               )}
             </div>

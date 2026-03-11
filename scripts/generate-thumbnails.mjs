@@ -31,6 +31,9 @@ const THUMB_QUALITY = 65
 const CARD_WIDTH = 800
 const CARD_QUALITY = 82
 
+const MINIMAP_THUMB_WIDTH = 400
+const MINIMAP_THUMB_QUALITY = 82
+
 const SUPPORTED_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif'])
 
 async function keyExists(key) {
@@ -115,6 +118,36 @@ async function generateAndUploadThumb(imageKey) {
   console.log(`  ✓ ${thumbKey} (${ratio}% of original)`)
 }
 
+async function generateAndUploadMinimapThumb(imageKey) {
+  // Always output WebP — same visual quality, smaller size
+  const minimapThumbKey = imageKey.replace('/images/', '/minimap-thumbnails/').replace(/\.[^.]+$/, '.webp')
+
+  if (!FORCE && await keyExists(minimapThumbKey)) {
+    console.log(`  ⏭  minimap-thumb exists: ${minimapThumbKey}`)
+    return
+  }
+
+  const ext = path.extname(imageKey).toLowerCase()
+  if (!SUPPORTED_EXTS.has(ext)) return
+
+  const buf = await downloadToBuffer(imageKey)
+  const outputBuf = await sharp(buf)
+    .resize({ width: MINIMAP_THUMB_WIDTH, withoutEnlargement: true })
+    .webp({ quality: MINIMAP_THUMB_QUALITY })
+    .toBuffer()
+
+  await s3.send(new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: minimapThumbKey,
+    Body: outputBuf,
+    ContentType: 'image/webp',
+    CacheControl: 'public, max-age=31536000, immutable',
+  }))
+
+  const ratio = ((outputBuf.length / buf.length) * 100).toFixed(0)
+  console.log(`  ✓ ${minimapThumbKey} (${ratio}% of original)`)
+}
+
 async function generateAndUploadCard(imageKey) {
   // Always output WebP for card images — same visual quality, ~35% smaller
   const cardKey = imageKey.replace('/images/', '/card/').replace(/\.(jpe?g|png|gif)$/i, '.webp')
@@ -158,16 +191,21 @@ async function generateAndUploadCard(imageKey) {
   let skipped = 0
   for (const key of imageKeys) {
     try {
-      const thumbKey = key.replace('/images/', '/thumbnails/')
-      const cardKey  = key.replace('/images/', '/card/')
-      const thumbExists = !FORCE && await keyExists(thumbKey)
-      const cardExists  = !FORCE && await keyExists(cardKey)
+      const thumbKey        = key.replace('/images/', '/thumbnails/')
+      const cardKey         = key.replace('/images/', '/card/')
+      const minimapThumbKey = key.replace('/images/', '/minimap-thumbnails/')
+      const thumbExists        = !FORCE && await keyExists(thumbKey)
+      const cardExists         = !FORCE && await keyExists(cardKey)
+      const minimapThumbExists = !FORCE && await keyExists(minimapThumbKey)
 
       if (thumbExists) { skipped++; console.log(`  ⏭  ${thumbKey}`) }
       else { await generateAndUploadThumb(key); created++ }
 
       if (cardExists) { console.log(`  ⏭  ${cardKey}`) }
       else { await generateAndUploadCard(key); created++ }
+
+      if (minimapThumbExists) { console.log(`  ⏭  ${minimapThumbKey}`) }
+      else { await generateAndUploadMinimapThumb(key); created++ }
     } catch (err) {
       console.error(`  ✗ Failed: ${key}`, err.message)
     }

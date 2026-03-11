@@ -16,6 +16,9 @@ const THUMB_QUALITY = 0.7
 const CARD_MAX_WIDTH = 800
 const CARD_QUALITY = 0.82
 
+const MINIMAP_THUMB_MAX_WIDTH = 400
+const MINIMAP_THUMB_QUALITY = 0.82
+
 /** Generate a compressed thumbnail Blob from a File or Blob using canvas */
 function generateThumbnail(file) {
   return new Promise((resolve) => {
@@ -61,6 +64,55 @@ function generateCardImage(file) {
     }
     img.onerror = () => { URL.revokeObjectURL(img.src); resolve(null) }
     img.src = URL.createObjectURL(file)
+  })
+}
+
+/** Generate a 400px WebP minimap thumbnail Blob from a File or Blob using canvas */
+function generateMinimapThumb(file) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, MINIMAP_THUMB_MAX_WIDTH / img.width)
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, w, h)
+      canvas.toBlob(
+        (blob) => { URL.revokeObjectURL(img.src); resolve(blob) },
+        'image/webp',
+        MINIMAP_THUMB_QUALITY,
+      )
+    }
+    img.onerror = () => { URL.revokeObjectURL(img.src); resolve(null) }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+/** Generate a 400px WebP minimap thumbnail Blob from an S3 URL (for existing images) */
+function generateMinimapThumbFromUrl(url) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const scale = Math.min(1, MINIMAP_THUMB_MAX_WIDTH / img.width)
+      const w = Math.round(img.width * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, w, h)
+      canvas.toBlob(
+        (blob) => resolve(blob),
+        'image/webp',
+        MINIMAP_THUMB_QUALITY,
+      )
+    }
+    img.onerror = () => resolve(null)
+    img.src = url
   })
 }
 
@@ -429,21 +481,29 @@ const AdminDashboard = () => {
         if (item.path) {
           resolvedPath = item.path
           // Ensure small thumbnail + card image exist for existing images
-          const thumbPath = resolvedPath.replace('/images/', '/thumbnails/')
-          const cardPath  = resolvedPath.replace('/images/', '/card/').replace(/\.(jpe?g|png|gif)$/i, '.webp')
+          const thumbPath        = resolvedPath.replace('/images/', '/thumbnails/')
+          const cardPath         = resolvedPath.replace('/images/', '/card/').replace(/\.(jpe?g|png|gif)$/i, '.webp')
+          const minimapThumbPath = resolvedPath.replace('/images/', '/minimap-thumbnails/').replace(/\.[^.]+$/, '.webp')
           try {
-            const [thumbRes, cardRes] = await Promise.all([
-              fetch(s3Url(thumbPath), { method: 'HEAD' }),
-              fetch(s3Url(cardPath),  { method: 'HEAD' }),
+            const [thumbRes, cardRes, minimapThumbRes] = await Promise.all([
+              fetch(s3Url(thumbPath),        { method: 'HEAD' }),
+              fetch(s3Url(cardPath),         { method: 'HEAD' }),
+              fetch(s3Url(minimapThumbPath), { method: 'HEAD' }),
             ])
-            if (!thumbRes.ok || !cardRes.ok) {
-              const blob = await generateCardImageFromUrl(s3Url(resolvedPath))
+            if (!thumbRes.ok || !cardRes.ok || !minimapThumbRes.ok) {
+              const [cardBlob, minimapBlob] = await Promise.all([
+                !cardRes.ok         ? generateCardImageFromUrl(s3Url(resolvedPath))        : Promise.resolve(null),
+                !minimapThumbRes.ok ? generateMinimapThumbFromUrl(s3Url(resolvedPath))     : Promise.resolve(null),
+              ])
               if (!thumbRes.ok) {
                 const thumbBlob = await generateThumbnailFromUrl(s3Url(resolvedPath))
                 if (thumbBlob) await uploadData({ path: thumbPath, data: thumbBlob, options: { contentType: 'image/jpeg', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
               }
-              if (!cardRes.ok && blob) {
-                await uploadData({ path: cardPath, data: blob, options: { contentType: 'image/webp', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
+              if (!cardRes.ok && cardBlob) {
+                await uploadData({ path: cardPath, data: cardBlob, options: { contentType: 'image/webp', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
+              }
+              if (!minimapThumbRes.ok && minimapBlob) {
+                await uploadData({ path: minimapThumbPath, data: minimapBlob, options: { contentType: 'image/webp', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
               }
             }
           } catch { /* best-effort */ }
@@ -457,9 +517,10 @@ const AdminDashboard = () => {
           }).result
           // Generate and upload small thumbnail + card image
           try {
-            const [thumbBlob, cardBlob] = await Promise.all([
+            const [thumbBlob, cardBlob, minimapBlob] = await Promise.all([
               generateThumbnail(item.file),
               generateCardImage(item.file),
+              generateMinimapThumb(item.file),
             ])
             if (thumbBlob) {
               const thumbPath = `projects/${slug}/thumbnails/${fileName}`
@@ -468,6 +529,10 @@ const AdminDashboard = () => {
             if (cardBlob) {
               const cardPath = `projects/${slug}/card/${fileName.replace(/\.(jpe?g|png|gif)$/i, '.webp')}`
               await uploadData({ path: cardPath, data: cardBlob, options: { contentType: 'image/webp', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
+            }
+            if (minimapBlob) {
+              const minimapThumbPath = `projects/${slug}/minimap-thumbnails/${fileName.replace(/\.[^.]+$/, '.webp')}`
+              await uploadData({ path: minimapThumbPath, data: minimapBlob, options: { contentType: 'image/webp', metadata: { 'Cache-Control': 'public, max-age=31536000, immutable' } } }).result
             }
           } catch { /* best-effort */ }
           resolvedPath = path
