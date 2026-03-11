@@ -84,6 +84,18 @@ const Portfolio = () => {
     fetchProfile()
   }, [])
 
+  // Background-preload card images for projects below the fold so they're ready
+  // when the user scrolls down (replicates the old bgAdd/bgBump behaviour).
+  useEffect(() => {
+    if (projects.length === 0) return
+    projects.slice(6).forEach(p => {
+      if (p.images.length > 0) {
+        const img = new Image()
+        img.src = cardUrl(p.images[0])
+      }
+    })
+  }, [projects])
+
   const fetchProjects = async () => {
     try {
       setLoading(true)
