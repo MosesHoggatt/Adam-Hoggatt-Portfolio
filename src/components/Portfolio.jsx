@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import awsConfig from '../aws-exports'
 import Lightbox from './Lightbox'
 import heroShot from '../assets/AdamHoggattHeroShot.jpg'
-import heroBanner from '../assets/AdamHoggattBanner.jpg'
 import { CATEGORY_ICON_MAP, BUILTIN_CATEGORY_META } from '../categoryIcons'
 import './Portfolio.css'
 
@@ -66,6 +65,7 @@ const Portfolio = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState('date-desc')
   const [profile, setProfile] = useState(null)
+  const [bannerReady, setBannerReady] = useState(false)
   const [showBioModal, setShowBioModal] = useState(false)
 
   // detect narrow/portrait layout; when true we treat the interface as "vertical"
@@ -192,7 +192,16 @@ const Portfolio = () => {
   const fetchProfile = async () => {
     try {
       const res = await fetch(s3Url('profile/profile.json'), { cache: 'no-cache' })
-      if (res.ok) setProfile(await res.json())
+      if (res.ok) {
+        const data = await res.json()
+        setProfile(data)
+        if (data.bannerPath) {
+          const img = new Image()
+          img.onload = () => setBannerReady(true)
+          img.onerror = () => setBannerReady(true) // show whatever loads
+          img.src = s3Url(data.bannerPath)
+        }
+      }
     } catch {}
   }
 
@@ -216,13 +225,13 @@ const Portfolio = () => {
       return 0
     })
 
-  const heroBannerSrc = profile?.bannerPath ? s3Url(profile.bannerPath) : heroBanner
+  const heroBannerSrc = bannerReady && profile?.bannerPath ? s3Url(profile.bannerPath) : null
   const heroPhotoSrc = profile?.photoPath ? s3Url(profile.photoPath) : heroShot
 
   return (
     <div className="portfolio">
       {/* ── Hero ── */}
-      <header className="hero" style={{ '--hero-bg': `url(${heroBannerSrc})` }}>
+      <header className="hero" style={heroBannerSrc ? { '--hero-bg': `url(${heroBannerSrc})` } : {}}>
         <div className="hero-overlay">
           <div className="hero-inner">
             <img
