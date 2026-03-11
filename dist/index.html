@@ -4,9 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- ── Google Analytics ───────────────────────────────────────── -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z8VPBY6L51"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-Z8VPBY6L51');
+    </script>
+
     <!-- ── Preconnect to S3 for faster image/data loads ──────────── -->
     <link rel="preconnect" href="https://adam-hoggatt-portfolio-content.s3.us-east-1.amazonaws.com" crossorigin />
     <link rel="dns-prefetch" href="https://adam-hoggatt-portfolio-content.s3.us-east-1.amazonaws.com" />
+    <!-- Start downloading the project index before JS bundle loads -->
+    <link rel="preload" href="https://adam-hoggatt-portfolio-content.s3.us-east-1.amazonaws.com/projects/index.json" as="fetch" crossorigin />
 
     <!-- ── Primary SEO ─────────────────────────────────────────────── -->
     <title>Adam Hoggatt | Expert Level Designer · Treyarch · Call of Duty</title>
@@ -14,24 +25,26 @@
     <meta name="keywords" content="Adam Hoggatt, level designer, Treyarch, Call of Duty, Black Ops, Black Ops 2, Black Ops 3, Black Ops 4, Cold War, Warzone, map design, multiplayer map, game level design, FPS level design, Activision, game designer portfolio, COD maps, Nuketown, Raid, Hijacked" />
     <meta name="author" content="Adam Hoggatt" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://adam.hoggatt.me/" />
+    <link rel="canonical" href="https://www.adam.hoggatt.me/" />
 
     <!-- ── Open Graph (Facebook / LinkedIn / Discord) ─────────────── -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://adam.hoggatt.me/" />
+    <meta property="og:url" content="https://www.adam.hoggatt.me/" />
     <meta property="og:site_name" content="Adam Hoggatt Portfolio" />
     <meta property="og:title" content="Adam Hoggatt | Expert Level Designer · Treyarch · Call of Duty" />
     <meta property="og:description" content="Over 15 years shipping iconic Call of Duty multiplayer maps at Treyarch. Browse the full level design portfolio of Adam Hoggatt — Nuketown, Raid, Hijacked, and many more." />
-    <meta property="og:image" content="https://adam.hoggatt.me/og-preview.jpg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:image" content="https://www.adam.hoggatt.me/og-image.jpg" />
+    <meta property="og:image:width" content="1792" />
+    <meta property="og:image:height" content="1792" />
+    <meta property="og:image:alt" content="Adam Hoggatt — Expert Level Designer at Treyarch" />
     <meta property="og:locale" content="en_US" />
 
     <!-- ── Twitter / X Card ──────────────────────────────────────── -->
-    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Adam Hoggatt | Expert Level Designer · Treyarch · Call of Duty" />
     <meta name="twitter:description" content="Over 15 years shipping iconic Call of Duty multiplayer maps at Treyarch. Browse the full portfolio." />
-    <meta name="twitter:image" content="https://adam.hoggatt.me/og-preview.jpg" />
+    <meta name="twitter:image" content="https://www.adam.hoggatt.me/og-image.jpg" />
+    <meta name="twitter:image:alt" content="Adam Hoggatt — Expert Level Designer at Treyarch" />
 
     <!-- ── Structured Data (JSON-LD) ─────────────────────────────── -->
     <script type="application/ld+json">
@@ -47,14 +60,14 @@
             "name": "Treyarch",
             "url": "https://www.treyarch.com"
           },
-          "url": "https://adam.hoggatt.me/",
+          "url": "https://www.adam.hoggatt.me/",
           "description": "Expert Level Designer at Treyarch with over 15 years of experience designing multiplayer maps for the Call of Duty franchise.",
           "knowsAbout": ["Level Design", "Game Design", "Call of Duty", "Multiplayer Maps", "FPS Map Design"]
         },
         {
           "@type": "WebSite",
           "name": "Adam Hoggatt Portfolio",
-          "url": "https://adam.hoggatt.me/",
+          "url": "https://www.adam.hoggatt.me/",
           "description": "Portfolio of Adam Hoggatt, Expert Level Designer at Treyarch, featuring Call of Duty multiplayer maps.",
           "author": {
             "@type": "Person",
@@ -72,8 +85,8 @@
 
     <!-- ── Favicon ───────────────────────────────────────────────── -->
     <link rel="icon" type="image/png" href="/bo1.png" />
-    <script type="module" crossorigin src="/assets/index-Blt93W4O.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-B8A56Jr8.css">
+    <script type="module" crossorigin src="/assets/index-DyxEoSiJ.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-UnVJv6Sj.css">
   </head>
   <body>
     <div id="root"></div>

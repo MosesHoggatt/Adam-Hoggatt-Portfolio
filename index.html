@@ -16,6 +16,8 @@
     <!-- ── Preconnect to S3 for faster image/data loads ──────────── -->
     <link rel="preconnect" href="https://adam-hoggatt-portfolio-content.s3.us-east-1.amazonaws.com" crossorigin />
     <link rel="dns-prefetch" href="https://adam-hoggatt-portfolio-content.s3.us-east-1.amazonaws.com" />
+    <!-- Start downloading the project index before JS bundle loads -->
+    <link rel="preload" href="https://adam-hoggatt-portfolio-content.s3.us-east-1.amazonaws.com/projects/index.json" as="fetch" crossorigin />
 
     <!-- ── Primary SEO ─────────────────────────────────────────────── -->
     <title>Adam Hoggatt | Expert Level Designer · Treyarch · Call of Duty</title>

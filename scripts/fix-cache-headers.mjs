@@ -2,7 +2,7 @@
  * fix-cache-headers.mjs
  *
  * Backfills `Cache-Control: public, max-age=31536000, immutable` on all
- * existing full-size images in S3 (projects/*/images/*).
+ * existing full-size images in S3 (projects/{slug}/images/{file}).
  * Thumbnails already have this header; only full images need updating.
  *
  * Uses copy-in-place (same src/dst) with MetadataDirective: REPLACE.
