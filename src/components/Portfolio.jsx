@@ -382,6 +382,7 @@ const Portfolio = () => {
       </main>
 
       <footer className="site-footer">
+        <p>Website built by <a href="https://github.com/MosesHoggatt" target="_blank" rel="noopener noreferrer">Moses Hoggatt</a></p>
         <p>&copy; {new Date().getFullYear()} Adam Hoggatt. All rights reserved.</p>
       </footer>
 

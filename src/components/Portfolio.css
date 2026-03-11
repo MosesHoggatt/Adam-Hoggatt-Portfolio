@@ -428,6 +428,17 @@
   font-size: 0.85rem;
 }
 
+.site-footer a {
+  color: inherit;
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+
+.site-footer a:hover {
+  color: #888;
+}
+
+
 /* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .hero-title { font-size: 1.6rem; }
