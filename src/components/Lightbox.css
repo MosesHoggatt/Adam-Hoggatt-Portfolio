@@ -155,7 +155,8 @@
   opacity: 1;
 }
 
-/* Ghost: last confirmed-visible image, absolute overlay while next image loads (up to 500ms). */
+/* Ghost: ALWAYS in DOM, opacity controlled by CSS class.
+   No element insertion on image switch = browser reuses decoded bitmap = zero-frame blink. */
 .lb-img-ghost {
   position: absolute;
   inset: 0;
@@ -164,6 +165,13 @@
   object-fit: contain;
   border-radius: 2px;
   user-select: none;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.lb-img-ghost--visible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 /* Thumbnail: absolute overlay, shown while full-res loads.
