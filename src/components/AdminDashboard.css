@@ -754,6 +754,9 @@
 .adm-img-card.adm-img-main {
   border-color: #f26501;
 }
+.adm-img-card.adm-img-minimap {
+  border-color: #2471a3;
+}
 .adm-img-card img {
   width: 100%;
   height: 100%;

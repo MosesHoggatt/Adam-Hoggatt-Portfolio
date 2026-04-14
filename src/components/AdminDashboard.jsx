@@ -529,10 +529,13 @@ const AdminDashboard = () => {
         } else if (item.file) {
           const fileName = item.file.name.replace(/\s+/g, '-')
           const path = `projects/${slug}/images/${fileName}`
+          const fileExt = fileName.split('.').pop().toLowerCase()
+          const MIME_FALLBACK = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', avif: 'image/avif', bmp: 'image/bmp' }
+          const contentType = item.file.type || MIME_FALLBACK[fileExt] || 'image/jpeg'
           await uploadData({
             path,
             data: item.file,
-            options: { contentType: item.file.type },
+            options: { contentType },
           }).result
           // Generate and upload small thumbnail + card image
           try {
@@ -1653,7 +1656,7 @@ const AdminDashboard = () => {
             {imageList.map((item, index) => (
               <div
                 key={item.id}
-                className={`adm-img-card${index === 0 ? ' adm-img-main' : ''}${dragOverIndex === index && dragItem.current !== index ? ' adm-img-drag-over' : ''}`}
+                className={`adm-img-card${index === 0 ? ' adm-img-main' : ''}${index === minimapIndex ? ' adm-img-minimap' : ''}${dragOverIndex === index && dragItem.current !== index ? ' adm-img-drag-over' : ''}`}
                 draggable
                 onDragStart={e => handleDragStart(e, index)}
                 onDragEnter={e => handleDragEnter(e, index)}
