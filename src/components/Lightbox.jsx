@@ -80,7 +80,7 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
     }
   }, [])
 
-  /* Preload all images for current project + adjacent projects' heroes */
+  /* Preload all images for current project + adjacent projects' heroes + thumbnails */
   useEffect(() => {
     const urls = [...images]
     if (minimapUrl) urls.push(minimapUrl)
@@ -89,6 +89,11 @@ const Lightbox = ({ project, allProjects, projectIndex, totalProjects, onPrevPro
       const next = allProjects?.[projectIndex + d]
       if (prev?.images?.[0]) urls.push(s3Url(prev.images[0]))
       if (next?.images?.[0]) urls.push(s3Url(next.images[0]))
+      // Preload all thumbnails for the immediately adjacent projects
+      if (d === 1) {
+        prev?.images?.forEach(p => urls.push(thumbUrl(p)))
+        next?.images?.forEach(p => urls.push(thumbUrl(p)))
+      }
     }
     preload(urls)
   // eslint-disable-next-line react-hooks/exhaustive-deps
