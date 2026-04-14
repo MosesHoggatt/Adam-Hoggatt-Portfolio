@@ -444,6 +444,7 @@ const AdminDashboard = () => {
         setMinimapIndex(galleryItems.length)
       } else {
         setImageList(galleryItems)
+        setMinimapIndex(null)
       }
     } else {
       setEditSlug(null)
@@ -453,6 +454,7 @@ const AdminDashboard = () => {
         categories: [], responsibilities: [],
       })
       setImageList([])
+      setMinimapIndex(null)
     }
     setRemovedPaths([])
     setCatInput('')
@@ -467,6 +469,7 @@ const AdminDashboard = () => {
     imageList.forEach(item => { if (item.file) URL.revokeObjectURL(item.preview) })
     setView('list')
     setEditSlug(null)
+    setMinimapIndex(null)
   }
 
   const confirmDiscard = () => {
@@ -475,6 +478,7 @@ const AdminDashboard = () => {
     imageList.forEach(item => { if (item.file) URL.revokeObjectURL(item.preview) })
     setView('list')
     setEditSlug(null)
+    setMinimapIndex(null)
   }
 
   /* ════════════════════════════════════════════════════════════════
